@@ -15,11 +15,11 @@ router.post('/register', (req, res) => {
   const passwordHash = req.body.password;
   sqlConnector.getUserID(userName).then((userId) => {
     if(userId) {
-      res.send({ 'id': userId, 'user': req.body.username });
+      res.send({ 'id': userId, 'user': req.body.username, 'created': false });
     } else {
       sqlConnector.createUserInDatabase(userName, passwordHash, 'student').then((status) => {
         sqlConnector.getUserID(userName).then((userId) => {
-          res.send({ 'id': userId, 'user': req.body.username });
+          res.send({ 'id': userId, 'user': req.body.username, 'created': true });
         })
       }, (error) => {
         console.log(error);
