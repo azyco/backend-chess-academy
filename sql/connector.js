@@ -3,23 +3,38 @@ var connection = mysql.createConnection({
   host     : 'localhost',
   user     : 'root',
   password : 'root',
-  database : 'authentication'
+  database : 'chess_academy_1'
 });
 
-function createUserInDatabase(email, password, type) {
-    connection.connect();
-    const sqlQuery = `insert into authentication(user_type, email,\
-        hashed_password, created_at) values('${type}', '${email}', '${password}', now());\
-        select id from authentication where email = ${email};`;
-    connection.query(sqlQuery, function (error, results, fields) {
-      if (error) throw error;
-      console.log(results);
-      console.log('The solution is: ', results[0].solution);
+function getUserID(email) {
+    const sqlQuery = `select id from authentication where email = '${email}';`;
+    return new Promise((resolve, reject) => {
+        connection.query(sqlQuery, function (error, results, fields) {
+            if(error || results.length == 0) {
+                resolve(0);
+            }
+            else {
+                resolve(results[0].id);
+            }
+        })
     });
-    connection.end();
+}
+
+function createUserInDatabase(email, password, type) {
+    const sqlQuery = `insert into authentication(user_type, email,\
+hashed_password, created_at) values('${type}', '${email}', '${password}', now());`;
+    return new Promise((resolve, reject) => {
+        connection.query(sqlQuery, function (error, results, fields) {
+            if(error) {
+                reject(error);
+            } else {
+                resolve();
+            }
+        })
+    });
 }
 
 module.exports = {
+    getUserID: getUserID,
     createUserInDatabase: createUserInDatabase
 };
-  
