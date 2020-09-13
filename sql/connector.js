@@ -1,9 +1,11 @@
 var mysql      = require('mysql');
+const config   = require('../config');
 var connection = mysql.createConnection({
-  host     : 'localhost',
-  user     : 'root',
-  password : 'root',
-  database : 'chess_academy_1'
+  host     : config.db.host,
+  port     : config.db.port,
+  user     : config.db.user,
+  password : config.db.password,
+  database : config.db.database
 });
 
 function getUserID(email) {
