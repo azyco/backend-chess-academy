@@ -23,8 +23,7 @@ function getUserID(email) {
 }
 
 function createUserInDatabase(email, password, type) {
-    const sqlQuery = `insert into authentication(user_type, email,\
-hashed_password, created_at) values('${type}', '${email}', '${password}', now());`;
+    const sqlQuery = `insert into authentication(user_type, email, hashed_password, created_at) values('${type}', '${email}', '${password}', now());`;
     return new Promise((resolve, reject) => {
         connection.query(sqlQuery, function (error, results, fields) {
             if(error) {
