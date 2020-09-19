@@ -8,7 +8,6 @@ router.get('/', (req, res) => {
 });
 
 router.get('/profile', (req, res) => {
-  console.log(req.session);
   if(req.session.email) {
     sqlConnector.getUserID(req.session.email).then((userId) => {
       if(userId != 0) {
