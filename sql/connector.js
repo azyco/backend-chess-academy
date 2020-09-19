@@ -50,14 +50,14 @@ function getPasswordHash(email) {
 }
 
 function getUserDetails(email) {
-    const sqlQuery = `select id,user_type,created_at from authentication where email = '${email}';`;
+    const sqlQuery = `select id,user_type,email,created_at from authentication where email = '${email}';`;
     return new Promise((resolve, reject) => {
         connection.query(sqlQuery, function (error, results, fields) {
             if(error || results.length == 0) {
                 resolve(0);
             }
             else {
-                resolve([results[0].id, results[0].user_type, results[0].created_at]);
+                resolve({id: results[0].id, type: results[0].user_type, email: results[0].email, created_at: results[0].created_at});
             }
         })
     });

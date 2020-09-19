@@ -4,13 +4,31 @@ const sqlConnector = require('../sql/connector');
 const router = express.Router();
 
 router.get('/', (req, res) => {
-  res.send('Server Test Passed');
+  res.send('pong');
+});
+
+router.get('/profile', (req, res) => {
+  console.log(req.session);
+  if(req.session.email) {
+    sqlConnector.getUserID(req.session.email).then((userId) => {
+      if(userId != 0) {
+        res.send({
+          id: userId,
+          email: req.session.email
+        });
+      } else {
+        res.sendStatus(403);
+      }
+    });
+  } else {
+    res.sendStatus(403);
+  }
 });
 
 /**
  * Register a new user (student)
  */
-router.post('/register_student', (req, res) => {
+router.post('/student', (req, res) => {
   const email = req.body.email;
   const passwordHash = req.body.password;
   sqlConnector.getUserID(email).then((userId) => {
@@ -32,7 +50,7 @@ router.post('/register_student', (req, res) => {
 /**
  * Register a new user (coach)
  */
-router.post('/register_coach', (req, res) => {
+router.post('/coach', (req, res) => {
   const email = req.body.email;
   const passwordHash = req.body.password;
   sqlConnector.getUserID(email).then((userId) => {
@@ -60,19 +78,25 @@ router.post('/login', (req, res) => {
   sqlConnector.getPasswordHash(email).then((db_password_hash) => {
     if(db_password_hash) {
       if(input_password_hash == db_password_hash){
-        sqlConnector.getUserDetails(email).then((response_arr) =>{
-          res.send({ 'exists':true, 'id': response_arr[0], 'user_type': response_arr[1], 'created_at': response_arr[2] });
+        sqlConnector.getUserDetails(email).then((response) => {
+          req.session.email = response.email;
+          res.send({
+            exists: true,
+            id: response.id,
+            user_type: response.type,
+            email: response.email,
+            created_at: response.created_at
+          });
         })
       }
       else{
-        res.send({ 'exists':false});
+        res.status(404).send("No such user or password mismatch");
       }
     } 
     else {
-      res.send({ 'exists':false});
+      res.status(404).send("No such user or password mismatch");
     }
   });
 });
 
 module.exports = router;
-
