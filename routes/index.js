@@ -24,6 +24,12 @@ router.get('/profile', (req, res) => {
   }
 });
 
+router.delete('/login', (req, res) => {
+  req.session.destroy(() => {
+    res.status(204).send();
+  })
+});
+
 /**
  * Register a new user (student)
  */
@@ -80,7 +86,6 @@ router.post('/login', (req, res) => {
         sqlConnector.getUserDetails(email).then((response) => {
           req.session.email = response.email;
           res.send({
-            exists: true,
             id: response.id,
             user_type: response.type,
             email: response.email,
