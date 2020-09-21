@@ -94,12 +94,14 @@ router.post('/login', (req, res) => {
         })
       }
       else{
-        res.status(404).send("No such user or password mismatch");
+        res.status(404).send({error_type:'login_credentials'});
       }
     } 
     else {
-      res.status(404).send("No such user or password mismatch");
+      res.status(404).send({error_type:'login_credentials'});
     }
+  }).catch((error)=>{
+    res.status(500).send({error_type:'database',code:error.code});
   });
 });
 
