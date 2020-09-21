@@ -19,7 +19,7 @@ function getUserID(email) {
             if(error){
                 reject(error);
             }
-            else if(errresults.length == 0) {
+            else if(results.length == 0) {
                 resolve(0);
             }
             else {
