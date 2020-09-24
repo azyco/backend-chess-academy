@@ -31,7 +31,7 @@ function getUserID(email) {
 
 function createUserInDatabase(profile) {
     const sqlQuery1 = {
-        sql:`insert into authentication(user_type, email, hashed_password, created_at) values('${profile.type}', '${profile.email}', '${profile.password}', now());`,
+        sql:`insert into authentication(user_type, email, hashed_password, created_at) values('${profile.user_type}', '${profile.email}', '${profile.password}', now());`,
         timeout:5000
     };
     const sqlQuery2 ={
