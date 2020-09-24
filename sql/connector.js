@@ -39,19 +39,19 @@ function createUserInDatabase(profile) {
         timeout:5000
     };
     return new Promise((resolve, reject) => {
-        connection.beginTransaction(function(error) {
+        connection.beginTransaction({timeout:5000},function(error) {
             if (error) {
                 reject(error);
             }
             connection.query(sqlQuery1, function(error, results, fields) {
                 if (error) { 
-                    connection.rollback(function() {
+                    connection.rollback({timeout:5000},function() {
                         reject(error);
                     });
                 }
                 connection.query(sqlQuery2, function (error, results, fields) {
                     if(error){
-                        connection.rollback(function() {
+                        connection.rollback({timeout:5000},function() {
                             reject(error);
                         });
                     }
@@ -102,13 +102,13 @@ function createUserInDatabase(profile) {
                         };
                         connection.query(sqlQuery3, function(error, results, fields) {
                             if (error) { 
-                                connection.rollback(function() {
+                                connection.rollback({timeout:5000},function() {
                                     reject(error);
                                 });
                             }  
                             connection.commit(function(error) {
                                 if (error) { 
-                                    connection.rollback(function() {
+                                    connection.rollback({timeout:5000},function() {
                                         reject(error);
                                     });
                                 }

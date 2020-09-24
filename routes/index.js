@@ -95,7 +95,7 @@ router.post('/coach', (req, res) => {
     alt_contact_code: (req.body.alt_contact_code)? parseInt(req.body.alt_contact_code) : null,
     lichess_id: req.body.lichess_id,
     dob: req.body.dob,
-    parent: req.body.parent,
+    parent: '',
     is_private_contact: 1,
     is_private_alt_contact: 1,
     is_private_dob: 1,
@@ -132,7 +132,10 @@ router.post('/login', (req, res) => {
             email: response.email,
             created_at: response.created_at
           });
-        })
+        }).catch((error)=>{
+          console.log(error);
+          res.status(500).send({error_type: 'database', error_code: error.code, error_message: error.sqlMessage});
+        });
       }
       else{
         res.status(404).send({error_type:'login_credentials'});
