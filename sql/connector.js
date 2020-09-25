@@ -72,7 +72,7 @@ function createUserInDatabase(profile) {
                                 alt_contact_code,
                                 lichess_id,
                                 dob,
-                                parent_name,
+                                parent,
                                 is_private_contact,
                                 is_private_alt_contact,
                                 is_private_dob,
@@ -159,7 +159,7 @@ function getUserDetails(email) {
                 resolve(0);
             }
             else {
-                resolve({id: results[0].id, type: results[0].user_type, email: results[0].email, created_at: results[0].created_at});
+                resolve({user_details: {id: results[0].id, user_type: results[0].user_type, email: results[0].email, created_at: results[0].created_at}});
             }
         })
     });
@@ -167,7 +167,7 @@ function getUserDetails(email) {
 
 function getUserProfile(id) {
     const sqlQuery = {
-        sql:`select 
+        sql:`select
         fullname,
         country,
         state,
@@ -184,8 +184,9 @@ function getUserProfile(id) {
         is_private_contact,
         is_private_alt_contact,
         is_private_dob,
-        is_private_parent 
-        where auth_id = '${id}';`,
+        is_private_parent
+        from profile
+        where auth_id = ${id};`,
         timeout:5000
     };
     return new Promise((resolve, reject) => {
@@ -198,6 +199,7 @@ function getUserProfile(id) {
             }
             else {
                 resolve({
+                    user_profile:{
                     fullname: results[0].fullname,
                     country: results[0].country,
                     state: results[0].state,
@@ -214,7 +216,7 @@ function getUserProfile(id) {
                     is_private_contact: results[0].is_private_contact,
                     is_private_alt_contact: results[0].is_private_alt_contact,
                     is_private_dob: results[0].is_private_dob,
-                    is_private_parent: results[0].is_private_parent
+                    is_private_parent: results[0].is_private_parent}
                 });
             }
         })

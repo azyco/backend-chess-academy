@@ -8,12 +8,11 @@ router.get('/', (req, res) => {
 });
 
 router.get('/profile', (req, res) => {
-  if(req.session.email) {
-    sqlConnector.getUserID(req.session.email).then((userId) => {
+  if(req.session.user_details) {
+    sqlConnector.getUserID(req.session.user_details.email).then((userId) => {
       if(userId != 0) {
         res.send({
-          id: userId,
-          email: req.session.email
+          user_details: req.session.user_details
         });
       } else {
         res.sendStatus(403);
@@ -63,7 +62,7 @@ router.post('/student', (req, res) => {
   }).then((response) => {
     sqlConnector.getUserID(req.body.email).then((userId) => {
       if(userId) {
-        res.status(201).send({id: userId, user: req.body.email});
+        res.status(201).send();
       }
     }).catch((error) => {
       console.log(error);
@@ -103,7 +102,7 @@ router.post('/coach', (req, res) => {
   }).then((response) => {
     sqlConnector.getUserID(req.body.email).then((userId) => {
       if(userId) {
-        res.status(201).send({id: userId, user: req.body.email});
+        res.status(201).send();
       }
     }).catch((error) => {
       console.log(error);
@@ -125,12 +124,15 @@ router.post('/login', (req, res) => {
     if(db_password_hash) {
       if(input_password_hash == db_password_hash){
         sqlConnector.getUserDetails(email).then((response) => {
-          req.session.email = response.email;
-          res.send({
-            id: response.id,
-            user_type: response.type,
-            email: response.email,
-            created_at: response.created_at
+          req.session.user_details = response.user_details;
+          sqlConnector.getUserProfile(response.user_details.id).then((response) => {
+            req.session.user_details = {...req.session.user_details, ...response.user_profile};
+            res.send({
+              user_details: req.session.user_details,
+            });
+          }).catch((error)=>{
+            console.log(error);
+            res.status(500).send({error_type: 'database', error_code: error.code, error_message: error.sqlMessage});
           });
         }).catch((error)=>{
           console.log(error);
