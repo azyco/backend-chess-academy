@@ -8,16 +8,18 @@ router.get('/', (req, res) => {
 });
 
 router.get('/profile', (req, res) => {
-  if(req.session.email) {
-    sqlConnector.getUserID(req.session.email).then((userId) => {
+  if(req.session.user_details) {
+    sqlConnector.getUserID(req.session.user_details.email).then((userId) => {
       if(userId != 0) {
         res.send({
-          id: userId,
-          email: req.session.email
+          user_details: req.session.user_details
         });
       } else {
         res.sendStatus(403);
       }
+    }).catch((error) => {
+      console.log(error);
+      res.status(500).send({error_type: 'database', error_code: error.code, error_message: error.sqlMessage});
     });
   } else {
     res.sendStatus(403);
@@ -32,23 +34,43 @@ router.delete('/login', (req, res) => {
 
 /**
  * Register a new user (student)
+ * also, maybe not check the existence of a user beforehand ?
+ * the error code from the database itself will show the error in the inputs
  */
 router.post('/student', (req, res) => {
-  const email = req.body.email;
-  const passwordHash = req.body.password;
-  sqlConnector.getUserID(email).then((userId) => {
-    if(userId) {
-      res.send({ 'id': userId, 'user': req.body.email, 'created': false });
-    } else {
-      sqlConnector.createUserInDatabase(email, passwordHash, 'student').then((status) => {
-        sqlConnector.getUserID(email).then((userId) => {
-          res.send({ 'id': userId, 'user': req.body.email, 'created': true });
-        })
-      }, (error) => {
-        console.log(error);
-        res.status(500).send("ERROR creating user" + error);
-      })
-    }
+  sqlConnector.createUserInDatabase({
+    user_type:'student',
+    email: req.body.email,
+    password: req.body.password,
+    fullname: req.body.fullname,
+    country: req.body.country,
+    state: req.body.state,
+    description: req.body.description,
+    image: req.body.image,
+    fide_id: req.body.fide_id,
+    contact: (req.body.contact)? parseInt(req.body.contact) : null,
+    alt_contact: (req.body.alt_contact)? parseInt(req.body.alt_contact) : null,
+    contact_code : (req.body.contact_code)? parseInt(req.body.contact_code) : null,
+    alt_contact_code: (req.body.alt_contact_code)? parseInt(req.body.alt_contact_code) : null,
+    lichess_id: req.body.lichess_id,
+    dob: req.body.dob,
+    parent: req.body.parent,
+    is_private_contact: 1,
+    is_private_alt_contact: 1,
+    is_private_dob: 1,
+    is_private_parent: 1
+  }).then((response) => {
+    sqlConnector.getUserID(req.body.email).then((userId) => {
+      if(userId) {
+        res.status(201).send();
+      }
+    }).catch((error) => {
+      console.log(error);
+      res.status(500).send({error_type: 'database', error_code: error.code, error_message: error.sqlMessage});
+    });
+  }).catch((error) => {
+    console.log(error);
+    res.status(500).send({error_type: 'database', error_code: error.code, error_message: error.sqlMessage});
   });
 });
 
@@ -56,21 +78,39 @@ router.post('/student', (req, res) => {
  * Register a new user (coach)
  */
 router.post('/coach', (req, res) => {
-  const email = req.body.email;
-  const passwordHash = req.body.password;
-  sqlConnector.getUserID(email).then((userId) => {
-    if(userId) {
-      res.send({ 'id': userId, 'user': req.body.email, 'created': false });
-    } else {
-      sqlConnector.createUserInDatabase(email, passwordHash, 'coach').then((status) => {
-        sqlConnector.getUserID(email).then((userId) => {
-          res.send({ 'id': userId, 'user': req.body.email, 'created': true });
-        })
-      }, (error) => {
-        console.log(error);
-        res.status(500).send("ERROR creating user" + error);
-      })
-    }
+  sqlConnector.createUserInDatabase({
+    user_type:'coach',
+    email: req.body.email,
+    password: req.body.password,
+    fullname: req.body.fullname,
+    country: req.body.country,
+    state: req.body.state,
+    description: req.body.description,
+    image: req.body.image,
+    fide_id: req.body.fide_id,
+    contact: (req.body.contact)? parseInt(req.body.contact) : null,
+    alt_contact: (req.body.alt_contact)? parseInt(req.body.alt_contact) : null,
+    contact_code : (req.body.contact_code)? parseInt(req.body.contact_code) : null,
+    alt_contact_code: (req.body.alt_contact_code)? parseInt(req.body.alt_contact_code) : null,
+    lichess_id: req.body.lichess_id,
+    dob: req.body.dob,
+    parent: '',
+    is_private_contact: 1,
+    is_private_alt_contact: 1,
+    is_private_dob: 1,
+    is_private_parent: 1
+  }).then((response) => {
+    sqlConnector.getUserID(req.body.email).then((userId) => {
+      if(userId) {
+        res.status(201).send();
+      }
+    }).catch((error) => {
+      console.log(error);
+      res.status(500).send({error_type: 'database', error_code: error.code, error_message: error.sqlMessage});
+    });
+  }).catch((error) => {
+    console.log(error);
+    res.status(500).send({error_type: 'database', error_code: error.code, error_message: error.sqlMessage});
   });
 });
 
@@ -84,22 +124,31 @@ router.post('/login', (req, res) => {
     if(db_password_hash) {
       if(input_password_hash == db_password_hash){
         sqlConnector.getUserDetails(email).then((response) => {
-          req.session.email = response.email;
-          res.send({
-            id: response.id,
-            user_type: response.type,
-            email: response.email,
-            created_at: response.created_at
+          req.session.user_details = response.user_details;
+          sqlConnector.getUserProfile(response.user_details.id).then((response) => {
+            req.session.user_details = {...req.session.user_details, ...response.user_profile};
+            res.send({
+              user_details: req.session.user_details,
+            });
+          }).catch((error)=>{
+            console.log(error);
+            res.status(500).send({error_type: 'database', error_code: error.code, error_message: error.sqlMessage});
           });
-        })
+        }).catch((error)=>{
+          console.log(error);
+          res.status(500).send({error_type: 'database', error_code: error.code, error_message: error.sqlMessage});
+        });
       }
       else{
-        res.status(404).send("No such user or password mismatch");
+        res.status(404).send({error_type:'login_credentials'});
       }
     } 
     else {
-      res.status(404).send("No such user or password mismatch");
+      res.status(404).send({error_type:'login_credentials'});
     }
+  }).catch((error)=>{
+    console.log(error);
+    res.status(500).send({error_type: 'database', error_code: error.code, error_message: error.sqlMessage});
   });
 });
 
