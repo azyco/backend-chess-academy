@@ -5,7 +5,9 @@ var config = {
         port: 3306,
         user: 'root',
         password: 'root',
-        database: 'chess_academy_1'
+        database: 'chess_academy_1',
+        connectionTimeout: 10000,
+        queryTimeout: 5000
     }
 }
 

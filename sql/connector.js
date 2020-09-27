@@ -6,13 +6,13 @@ var connection = mysql.createConnection({
   user              : config.db.user,
   password          : config.db.password,
   database          : config.db.database,
-  connectTimeout    : config.db.timeout
+  connectTimeout    : config.db.connectionTimeout
 });
 
 function getUserID(email) {
     const sqlQuery ={
         sql:`select id from authentication where email = '${email}';`,
-        timeout:5000
+        timeout:config.db.queryTimeout
     };
     return new Promise((resolve, reject) => {
         connection.query(sqlQuery, function (error, results, fields) {
@@ -32,26 +32,26 @@ function getUserID(email) {
 function createUserInDatabase(profile) {
     const sqlQuery1 = {
         sql:`insert into authentication(user_type, email, hashed_password, created_at) values('${profile.user_type}', '${profile.email}', '${profile.password}', now());`,
-        timeout:5000
+        timeout:config.db.queryTimeout
     };
     const sqlQuery2 ={
         sql:`select id from authentication where email = '${profile.email}';`,
-        timeout:5000
+        timeout:config.db.queryTimeout
     };
     return new Promise((resolve, reject) => {
-        connection.beginTransaction({timeout:5000},function(error) {
+        connection.beginTransaction({timeout:config.db.queryTimeout},function(error) {
             if (error) {
                 reject(error);
             }
             connection.query(sqlQuery1, function(error, results, fields) {
                 if (error) { 
-                    connection.rollback({timeout:5000},function() {
+                    connection.rollback({timeout:config.db.queryTimeout},function() {
                         reject(error);
                     });
                 }
                 connection.query(sqlQuery2, function (error, results, fields) {
                     if(error){
-                        connection.rollback({timeout:5000},function() {
+                        connection.rollback({timeout:config.db.queryTimeout},function() {
                             reject(error);
                         });
                     }
@@ -91,24 +91,24 @@ function createUserInDatabase(profile) {
                                     ${profile.contact_code},
                                     ${profile.alt_contact_code},
                                     '${profile.lichess_id}',
-                                    '${profile.dob}',
+                                    STR_TO_DATE('${profile.dob}', '%Y-%m-%d'),
                                     '${profile.parent}',
                                     ${profile.is_private_contact},
                                     ${profile.is_private_alt_contact},
                                     ${profile.is_private_dob},
                                     ${profile.is_private_parent}
                                     );`,
-                            timeout:5000
+                            timeout:config.db.queryTimeout
                         };
                         connection.query(sqlQuery3, function(error, results, fields) {
                             if (error) { 
-                                connection.rollback({timeout:5000},function() {
+                                connection.rollback({timeout:config.db.queryTimeout},function() {
                                     reject(error);
                                 });
                             }  
                             connection.commit(function(error) {
                                 if (error) { 
-                                    connection.rollback({timeout:5000},function() {
+                                    connection.rollback({timeout:config.db.queryTimeout},function() {
                                         reject(error);
                                     });
                                 }
@@ -128,7 +128,7 @@ function createUserInDatabase(profile) {
 function getPasswordHash(email) {
     const sqlQuery = {
         sql:`select hashed_password from authentication where email = '${email}';`,
-        timeout:5000,
+        timeout:config.db.queryTimeout,
     };
     return new Promise((resolve, reject) => {
         connection.query(sqlQuery, function (error, results, fields) {
@@ -148,7 +148,7 @@ function getPasswordHash(email) {
 function getUserDetails(email) {
     const sqlQuery = {
         sql:`select id,user_type,email,created_at from authentication where email = '${email}';`,
-        timeout:5000
+        timeout:config.db.queryTimeout
     };
     return new Promise((resolve, reject) => {
         connection.query(sqlQuery, function (error, results, fields) {
@@ -187,7 +187,7 @@ function getUserProfile(id) {
         is_private_parent
         from profile
         where auth_id = ${id};`,
-        timeout:5000
+        timeout:config.db.queryTimeout
     };
     return new Promise((resolve, reject) => {
         connection.query(sqlQuery, function (error, results, fields) {
