@@ -149,7 +149,7 @@ function getPasswordHash(email) {
     });
 }
 
-function getUserDetails(email) {
+function getUserAuthentication(email) {
     const sqlQuery = {
         sql: `select id,user_type,email,created_at from authentication where email = '${email}';`,
         timeout: config.db.queryTimeout
@@ -163,7 +163,7 @@ function getUserDetails(email) {
                 resolve(0);
             } else {
                 resolve({
-                    user_details: {
+                    user_authentication: {
                         id: results[0].id,
                         user_type: results[0].user_type,
                         email: results[0].email,
@@ -266,7 +266,7 @@ function updateUserProfile(userID, updated_user_profile) {
 module.exports = {
     getUserID: getUserID,
     createUserInDatabase: createUserInDatabase,
-    getUserDetails: getUserDetails,
+    getUserAuthentication: getUserAuthentication,
     getPasswordHash: getPasswordHash,
     getUserProfile: getUserProfile,
     updateUserProfile: updateUserProfile

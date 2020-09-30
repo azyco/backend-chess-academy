@@ -7,15 +7,17 @@ router.get('/', (req, res) => {
   res.send('pong');
 });
 
-router.get('/profile', (req, res) => {
-  if (req.session.user_details) {
-    sqlConnector.getUserID(req.session.user_details.email).then((userId) => {
+router.get('/login', (req, res) => {
+  if (req.session.user_authentication) {
+    sqlConnector.getUserID(req.session.user_authentication.email).then((userId) => {
       if (userId != 0) {
         res.send({
-          user_details: req.session.user_details
+          user_authentication: req.session.user_authentication
         });
+        console.log("Session Restored");
       } else {
-        res.sendStatus(403);
+        console.log("Expired/Bad Session");
+        res.sendStatus(401);
       }
     }).catch((error) => {
       console.log(error);
@@ -26,30 +28,48 @@ router.get('/profile', (req, res) => {
       });
     });
   } else {
-    res.sendStatus(403);
+    console.log("Expired/Bad Session");
+    res.sendStatus(401);
   }
 });
 
-router.get('/relogin', (req, res) => {
-  if (req.session.user_details.email) {
-    sqlConnector.getUserDetails(req.session.user_details.email).then((response) => {
-      req.session.user_details = response.user_details;
-      sqlConnector.getUserProfile(response.user_details.id).then((response) => {
-        req.session.user_details = {
-          ...req.session.user_details,
-          ...response.user_profile
-        };
-        res.send({
-          user_details: req.session.user_details,
+/**
+ * Login a user by checking password hash
+ */
+router.post('/login', (req, res) => {
+  if (req.body.email &&
+    req.body.password_hash) {
+    const email = req.body.email;
+    const input_password_hash = req.body.password_hash;
+    sqlConnector.getPasswordHash(email).then((db_password_hash) => {
+      if (db_password_hash) {
+        if (input_password_hash == db_password_hash) {
+          sqlConnector.getUserAuthentication(email).then((response) => {
+            req.session.user_authentication = response.user_authentication;
+            console.log("user logged in");
+            res.send({
+              user_authentication: response.user_authentication,
+            });
+          }).catch((error) => {
+            console.log(error);
+            res.status(500).send({
+              error_type: 'database',
+              error_code: error.code,
+              error_message: error.sqlMessage
+            });
+          });
+        } else {
+          console.log("bad login details");
+          res.status(404).send({
+            error_type: 'login_credentials'
+          });
+        }
+      } else {
+        console.log("bad login details");
+        res.status(404).send({
+          error_type: 'login_credentials'
         });
-      }).catch((error) => {
-        console.log(error);
-        res.status(500).send({
-          error_type: 'database',
-          error_code: error.code,
-          error_message: error.sqlMessage
-        });
-      });
+      }
     }).catch((error) => {
       console.log(error);
       res.status(500).send({
@@ -77,7 +97,6 @@ router.delete('/login', (req, res) => {
  */
 router.post('/student', (req, res) => {
   if (req.body.registration_details) {
-    console.log(req.body.registration_details);
     sqlConnector.createUserInDatabase({
       user_type: 'student',
       email: req.body.registration_details.email,
@@ -122,7 +141,6 @@ router.post('/student', (req, res) => {
  */
 router.post('/coach', (req, res) => {
   if (req.body.registration_details) {
-    console.log(req.body.registration_details);
     sqlConnector.createUserInDatabase({
       user_type: 'coach',
       email: req.body.registration_details.email,
@@ -145,7 +163,9 @@ router.post('/coach', (req, res) => {
       is_private_dob: 1,
       is_private_parent: 1
     }).then((response) => {
+      console.log("user created");
       res.status(201).send();
+      console.log("response sent");
     }).catch((error) => {
       console.log(error);
       res.status(500).send({
@@ -160,36 +180,38 @@ router.post('/coach', (req, res) => {
   }
 });
 
-/**
- * Login a user by checking password hash
- */
-router.post('/login', (req, res) => {
+router.get('/profile', (req, res) => {
+  if (req.session.user_authentication) {
+    sqlConnector.getUserProfile(req.session.user_authentication.id).then((response) => {
+      console.log("user profile retrieved");
+      res.send({
+        user_profile: response.user_profile
+      });
+    }).catch((error) => {
+      console.log(error);
+      res.status(500).send({
+        error_type: 'database',
+        error_code: error.code,
+        error_message: error.sqlMessage
+      });
+    });
+  } else {
+    console.log("Bad Data");
+    res.sendStatus(400);
+  }
+});
+
+router.put('/profile', (req, res) => {
   if (req.body.email &&
-    req.body.password_hash) {
-    const email = req.body.email;
-    const input_password_hash = req.body.password_hash;
-    sqlConnector.getPasswordHash(email).then((db_password_hash) => {
-      if (db_password_hash) {
-        if (input_password_hash == db_password_hash) {
-          sqlConnector.getUserDetails(email).then((response) => {
-            req.session.user_details = response.user_details;
-            sqlConnector.getUserProfile(response.user_details.id).then((response) => {
-              req.session.user_details = {
-                ...req.session.user_details,
-                ...response.user_profile
-              };
-              res.send({
-                user_details: req.session.user_details,
-              });
-            }).catch((error) => {
-              console.log(error);
-              res.status(500).send({
-                error_type: 'database',
-                error_code: error.code,
-                error_message: error.sqlMessage
-              });
+    req.body.updated_user_profile) {
+    if (req.body.email === req.session.user_authentication.email) {
+      sqlConnector.getUserID(req.body.email).then((userID) => {
+        sqlConnector.updateUserProfile(userID, req.body.updated_user_profile).then((response) => {
+          sqlConnector.getUserProfile(req.session.user_authentication.id).then((response) => {
+            res.send({
+              user_profile: response.user_profile
             });
-          }).catch((error) => {
+          }).catch(() => {
             console.log(error);
             res.status(500).send({
               error_type: 'database',
@@ -197,36 +219,14 @@ router.post('/login', (req, res) => {
               error_message: error.sqlMessage
             });
           });
-        } else {
-          res.status(404).send({
-            error_type: 'login_credentials'
+        }).catch((error) => {
+          console.log(error);
+          res.status(500).send({
+            error_type: 'database',
+            error_code: error.code,
+            error_message: error.sqlMessage
           });
-        }
-      } else {
-        res.status(404).send({
-          error_type: 'login_credentials'
         });
-      }
-    }).catch((error) => {
-      console.log(error);
-      res.status(500).send({
-        error_type: 'database',
-        error_code: error.code,
-        error_message: error.sqlMessage
-      });
-    });
-  } else {
-    console.log("Bad Data");
-    res.sendStatus(400);
-  }
-});
-
-router.put('/user', (req, res) => {
-  if (req.body.email &&
-    req.body.updated_user_profile) {
-    sqlConnector.getUserID(req.body.email).then((userID) => {
-      sqlConnector.updateUserProfile(userID, req.body.updated_user_profile).then((response) => {
-        res.send();
       }).catch((error) => {
         console.log(error);
         res.status(500).send({
@@ -235,17 +235,14 @@ router.put('/user', (req, res) => {
           error_message: error.sqlMessage
         });
       });
-    }).catch((error) => {
-      console.log(error);
-      res.status(500).send({
-        error_type: 'database',
-        error_code: error.code,
-        error_message: error.sqlMessage
-      });
-    });
+    } else {
+      console.log("Unauthorized");
+      res.sendStatus(401);
+    }
   } else {
     console.log("Bad Data");
     res.sendStatus(400);
   }
 });
+
 module.exports = router;
