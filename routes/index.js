@@ -107,10 +107,10 @@ router.post('/student', (req, res) => {
       description: req.body.registration_details.description,
       image: req.body.registration_details.image,
       fide_id: req.body.registration_details.fide_id,
-      contact: (req.body.registration_details.contact) ? parseInt(req.body.registration_details.contact) : null,
-      alt_contact: (req.body.registration_details.alt_contact) ? parseInt(req.body.registration_details.alt_contact) : null,
-      contact_code: (req.body.registration_details.contact_code) ? parseInt(req.body.registration_details.contact_code) : null,
-      alt_contact_code: (req.body.registration_details.alt_contact_code) ? parseInt(req.body.registration_details.alt_contact_code) : null,
+      contact: req.body.registration_details.contact,
+      alt_contact: req.body.registration_details.alt_contact,
+      contact_code: req.body.registration_details.contact_code,
+      alt_contact_code: req.body.registration_details.alt_contact_code,
       lichess_id: req.body.registration_details.lichess_id,
       dob: req.body.registration_details.dob,
       parent: req.body.registration_details.parent,
@@ -136,6 +136,26 @@ router.post('/student', (req, res) => {
   }
 });
 
+router.get('/student', (req, res) => {
+  if (req.session.user_authentication && req.session.user_authentication.user_type === 'admin') {
+    sqlConnector.getStudents().then((student_array) => {
+      console.log("student array sent");
+      res.send({
+        student_array: student_array
+      });
+    }).catch((error) => {
+      console.log(error);
+      res.status(500).send({
+        error_type: 'database',
+        error_code: error.code,
+        error_message: error.sqlMessage
+      });
+    });
+  } else {
+    res.sendStatus(403);
+  }
+});
+
 /**
  * Register a new user (coach)
  */
@@ -151,10 +171,10 @@ router.post('/coach', (req, res) => {
       description: req.body.registration_details.description,
       image: req.body.registration_details.image,
       fide_id: req.body.registration_details.fide_id,
-      contact: (req.body.registration_details.contact) ? parseInt(req.body.registration_details.contact) : null,
-      alt_contact: (req.body.registration_details.alt_contact) ? parseInt(req.body.registration_details.alt_contact) : null,
-      contact_code: (req.body.registration_details.contact_code) ? parseInt(req.body.registration_details.contact_code) : null,
-      alt_contact_code: (req.body.registration_details.alt_contact_code) ? parseInt(req.body.registration_details.alt_contact_code) : null,
+      contact: req.body.registration_details.contact,
+      alt_contact: req.body.registration_details.alt_contact,
+      contact_code: req.body.registration_details.contact_code,
+      alt_contact_code: req.body.registration_details.alt_contact_code,
       lichess_id: req.body.registration_details.lichess_id,
       dob: req.body.registration_details.dob,
       parent: '',
@@ -177,6 +197,26 @@ router.post('/coach', (req, res) => {
   } else {
     console.log("Bad Data");
     res.sendStatus(400);
+  }
+});
+
+router.get('/coach', (req, res) => {
+  if (req.session.user_authentication && req.session.user_authentication.user_type === 'admin') {
+    sqlConnector.getCoaches().then((coach_array) => {
+      console.log("coach array sent");
+      res.send({
+        coach_array: coach_array
+      });
+    }).catch((error) => {
+      console.log(error);
+      res.status(500).send({
+        error_type: 'database',
+        error_code: error.code,
+        error_message: error.sqlMessage
+      });
+    });
+  } else {
+    res.sendStatus(403);
   }
 });
 
@@ -242,6 +282,52 @@ router.put('/profile', (req, res) => {
   } else {
     console.log("Bad Data");
     res.sendStatus(400);
+  }
+});
+
+router.get('/classroom', (req, res) => {
+  if (req.session.user_authentication && req.session.user_authentication.user_type === 'admin') {
+    sqlConnector.getClassrooms().then((classrom_array) => {
+      console.log("classroom array sent");
+      res.send({
+        classrom_array: classrom_array
+      });
+    }).catch((error) => {
+      console.log(error);
+      res.status(500).send({
+        error_type: 'database',
+        error_code: error.code,
+        error_message: error.sqlMessage
+      });
+    });
+  } else {
+    res.sendStatus(403);
+  }
+});
+
+router.post('/classroom', (req, res) => {
+  console.log("posted classroom: ");
+  console.log(req.body.classroom_data);
+  if (req.session.user_authentication && req.session.user_authentication.user_type === 'admin') {
+    if (req.body.classroom_data) {
+      sqlConnector.addClassroom(req.body.classroom_data).then((response) => {
+        console.log("classroom added");
+        res.sendStatus(201);
+      }).catch((error) => {
+        console.log(error);
+        res.status(500).send({
+          error_type: 'database',
+          error_code: error.code,
+          error_message: error.sqlMessage
+        });
+      });
+    } else {
+      console.log("Bad Data");
+      res.sendStatus(400);
+    }
+  } else {
+    console.log("Unauthorized");
+    res.sendStatus(403);
   }
 });
 

@@ -29,7 +29,16 @@ function getUserID(email) {
 
 function createUserInDatabase(profile) {
     const sqlQuery1 = {
-        sql: `insert into authentication(user_type, email, hashed_password, created_at) values('${profile.user_type}', '${profile.email}', '${profile.password}', now());`,
+        sql: `insert into authentication(
+            user_type, email,
+            hashed_password,
+            created_at
+            )
+            values(
+                '${profile.user_type}',
+                '${profile.email}',
+                '${profile.password}',
+                now());`,
         timeout: config.db.queryTimeout
     };
     const sqlQuery2 = {
@@ -89,10 +98,10 @@ function createUserInDatabase(profile) {
                                     '${profile.description}',
                                     '${profile.user_image}',
                                     '${profile.fide_id}',
-                                    ${profile.contact},
-                                    ${profile.alt_contact},
-                                    ${profile.contact_code},
-                                    ${profile.alt_contact_code},
+                                    '${profile.contact}',
+                                    '${profile.alt_contact}',
+                                    '${profile.contact_code}',
+                                    '${profile.alt_contact_code}',
                                     '${profile.lichess_id}',
                                     STR_TO_DATE('${profile.dob}', '%Y-%m-%d'),
                                     '${profile.parent}',
@@ -262,6 +271,193 @@ function updateUserProfile(userID, updated_user_profile) {
         });
     });
 }
+//admin
+function getClassrooms() {
+    const sqlQuery = {
+        sql: `select
+        classroom.id,
+        classroom.name,
+        classroom.description,
+        classroom.is_active,
+        mapping_coach_classroom.coach_id,
+        profile.fullname,
+        from classroom;`,
+        timeout: config.db.queryTimeout
+    };
+    return new Promise((resolve, reject) => {
+        connection.query(sqlQuery, function (error, results, fields) {
+            if (error) {
+                reject(error);
+            } else if (results.length == 0) {
+                resolve(0);
+            } else {
+                resolve(results);
+            }
+        })
+    });
+}
+
+//admin
+function addClassroom(classroom_data) {
+    const sqlQuery1 = {
+        sql: `insert into classroom(
+            name,
+            description,
+            is_active,
+            created_at)
+            values(
+                '${classroom_data.classroom_name}',
+                '${classroom_data.classroom_description}',
+                ${classroom_data.is_active},
+                now());`,
+        timeout: config.db.queryTimeout
+    };
+    const sqlQuery2 = {
+        sql: `select id from classroom where name = '${classroom_data.classroom_name}';`,
+        timeout: config.db.queryTimeout
+    };
+    return new Promise((resolve, reject) => {
+        connection.beginTransaction({
+            timeout: config.db.queryTimeout
+        }, function (error) {
+            if (error) {
+                reject(error);
+            }
+            connection.query(sqlQuery1, function (error, results, fields) {
+                if (error) {
+                    connection.rollback({
+                        timeout: config.db.queryTimeout
+                    }, function () {
+                        reject(error);
+                    });
+                }
+                connection.query(sqlQuery2, function (error, results, fields) {
+                    if (error) {
+                        connection.rollback({
+                            timeout: config.db.queryTimeout
+                        }, function () {
+                            reject(error);
+                        });
+                    } else {
+                        const classroom_id = results[0].id;
+                        let sql =
+                            `insert into mapping_coach_classroom(
+                            coach_id,
+                            classroom_id,
+                            created_at)
+                            values`;
+                        classroom_data.coach_array_selected.forEach((value) => {
+                            sql = sql.concat(
+                                `(
+                                    ${value.id},
+                                    ${classroom_id},
+                                    now()),`)
+                        });
+                        sql = sql.slice(0, sql.length - 1).concat(';');
+                        const sqlQuery3 = {
+                            sql: sql,
+                            timeout: config.db.queryTimeout
+                        }
+                        connection.query(sqlQuery3, function (error, results, fields) {
+                            if (error) {
+                                connection.rollback({
+                                    timeout: config.db.queryTimeout
+                                }, function () {
+                                    reject(error);
+                                });
+                            }
+                            let sql =
+                                `insert into mapping_student_classroom(
+                                student_id,
+                                classroom_id,
+                                created_at)
+                                values`;
+                            classroom_data.student_array_selected.forEach((value) => {
+                                sql = sql.concat(
+                                    `(
+                                        ${value.id},
+                                        ${classroom_id},
+                                        now()),`
+                                )
+                            });
+                            sql = sql.slice(0, sql.length - 1).concat(';');
+                            const sqlQuery4 = {
+                                sql: sql,
+                                timeout: config.db.queryTimeout
+                            }
+                            connection.query(sqlQuery4, function (error, results, fields) {
+                                if (error) {
+                                    connection.rollback({
+                                        timeout: config.db.queryTimeout
+                                    }, function () {
+                                        reject(error);
+                                    });
+                                }
+                                connection.commit(function (error) {
+                                    if (error) {
+                                        connection.rollback({
+                                            timeout: config.db.queryTimeout
+                                        }, function () {
+                                            reject(error);
+                                        });
+                                    } else {
+                                        resolve();
+                                    }
+                                });
+                            })
+                        });
+                    }
+                });
+
+            });
+        });
+    });
+}
+
+//admin
+function getStudents() {
+    const sqlQuery = {
+        sql: `select authentication.id,authentication.email,authentication.user_type,profile.fullname 
+        from authentication, profile
+        where 
+        (authentication.id = profile.auth_id) 
+        and authentication.user_type = "student";`,
+        timeout: config.db.queryTimeout
+    };
+    return new Promise((resolve, reject) => {
+        connection.query(sqlQuery, function (error, results, fields) {
+            if (error) {
+                reject(error);
+            } else if (results.length == 0) {
+                resolve(0);
+            } else {
+                resolve(results);
+            }
+        })
+    });
+}
+//admin
+function getCoaches() {
+    const sqlQuery = {
+        sql: `select authentication.id,authentication.email,authentication.user_type,profile.fullname 
+        from authentication, profile
+        where 
+        (authentication.id = profile.auth_id) 
+        and authentication.user_type = "coach";`,
+        timeout: config.db.queryTimeout
+    };
+    return new Promise((resolve, reject) => {
+        connection.query(sqlQuery, function (error, results, fields) {
+            if (error) {
+                reject(error);
+            } else if (results.length == 0) {
+                resolve(0);
+            } else {
+                resolve(results);
+            }
+        })
+    });
+}
 
 module.exports = {
     getUserID: getUserID,
@@ -269,5 +465,9 @@ module.exports = {
     getUserAuthentication: getUserAuthentication,
     getPasswordHash: getPasswordHash,
     getUserProfile: getUserProfile,
-    updateUserProfile: updateUserProfile
+    updateUserProfile: updateUserProfile,
+    getClassrooms: getClassrooms,
+    addClassroom: addClassroom,
+    getStudents: getStudents,
+    getCoaches: getCoaches
 };
