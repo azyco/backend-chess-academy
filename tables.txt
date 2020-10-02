@@ -1,0 +1,78 @@
+create table authentication(
+  id int unsigned auto_increment,
+  user_type varchar(10) not null,
+  email varchar(100) not null unique,
+  hashed_password varchar(40) not null,
+  created_at timestamp not null
+);
+
+insert into authentication(
+  user_type,
+  email,
+  hashed_password,
+  created_at
+)
+values(
+  'admin',
+  'admin@test.com',
+  '7c4a8d09ca3762af61e59520943dc26494f8941b',
+  now()
+);
+
+
+create table mapping_student_classroom(
+  student_id int unsigned not null unique,
+  classroom_id int unsigned not null,
+  created_at timestamp,
+  constraint foreign key(student_id) references authentication(id),
+  constraint foreign key(classroom_id) references classroom(id)
+  on delete cascade
+  on update cascade
+);
+
+
+create table mapping_coach_classroom(
+  coach_id int unsigned not null unique,
+  classroom_id int unsigned not null,
+  created_at timestamp,
+  constraint foreign key(coach_id) references authentication(id),
+  constraint foreign key(classroom_id) references classroom(id)
+  on delete cascade
+  on update cascade
+);
+
+create table classroom(
+	id int unsigned auto_increment,
+	name varchar(80) not null unique,
+	description varchar(200),
+	is_active boolean not null,
+	created_at timestamp,
+  	primary key(id)
+  );
+
+
+  use chess_academy_1;
+create table profile(
+  auth_id int unsigned not null,
+  fullname varchar(100) not null,
+  country varchar(3) not null,
+  state varchar(20) not null,
+  description varchar(200),
+  user_image blob,
+  fide_id varchar(10),
+  contact varchar(12) not null unique,
+  alt_contact varchar(12),
+  contact_code varchar(3) not null,
+  alt_contact_code varchar(3),
+  lichess_id varchar(10),
+  dob date not null,
+  parent varchar(100),
+  is_private_contact boolean not null,
+  is_private_alt_contact boolean,
+  is_private_dob boolean not null,
+  is_private_parent boolean,
+  primary key(contact_code, contact),
+  constraint foreign key(auth_id) references authentication(id)
+  on delete cascade
+  on update cascade
+)
