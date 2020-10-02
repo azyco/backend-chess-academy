@@ -274,14 +274,27 @@ function updateUserProfile(userID, updated_user_profile) {
 //admin
 function getClassrooms() {
     const sqlQuery = {
-        sql: `select
+        sql: 
+        `select
         classroom.id,
         classroom.name,
         classroom.description,
         classroom.is_active,
-        mapping_coach_classroom.coach_id,
-        profile.fullname,
-        from classroom;`,
+        classroom.created_at,
+        count(ms.student_id) as student_count,
+        group_concat(p.fullname) as coaches
+        from
+        classroom,
+        mapping_student_classroom as ms,
+        mapping_coach_classroom as mc,
+        profile as p
+        where
+        classroom.id = ms.classroom_id AND
+        classroom.id = mc.classroom_id AND
+        mc.coach_id = p.auth_id
+        group by
+        mc.coach_id
+        ;`,
         timeout: config.db.queryTimeout
     };
     return new Promise((resolve, reject) => {
