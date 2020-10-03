@@ -1,5 +1,5 @@
 const SQL = {
-'GET.CLASSROOMS': `select classroom.id, classroom.name, classroom.description,
+  'GET.CLASSROOMS': `select classroom.id, classroom.name, classroom.description,
     classroom.is_active, classroom.created_at, count(ms.student_id) as student_count, group_concat(p.fullname) as coaches
     from
         classroom,
@@ -13,11 +13,11 @@ const SQL = {
     group by
         classroom.id,
         mc.coach_id;`,
-'GET.STUDENTS': `select authentication.id,authentication.email,authentication.user_type,profile.fullname 
+  'GET.STUDENTS': `select authentication.id,authentication.email,authentication.user_type,profile.fullname 
     from authentication, profile
     where
         (authentication.id = profile.auth_id)
-        and authentication.user_type = "student";`
+        and authentication.user_type = "student";`,
 };
 
 exports.SQL = SQL;

@@ -1,38 +1,30 @@
-
-
-function sqlGenerateInsertStudentsToClassRoom(classroom_id, student_array_selected) {
-    let sql =
-    `insert into mapping_student_classroom(
+function sqlGenerateInsertStudentsToClassRoom(classroomId, selectedStudentArray) {
+  let sql = `insert into mapping_student_classroom(
     student_id,
     classroom_id,
     created_at)
     values`;
-    student_array_selected.forEach((value) => {
-        sql = sql.concat(
-            `(
-                ${value.id},
-                ${classroom_id},
-                now()),`
-        )
-    });
-    return sql = sql.slice(0, sql.length - 1).concat(';');
+  selectedStudentArray.forEach((value) => {
+    sql = sql.concat(`(${value.id},${classroomId},now()),`);
+  });
+  return sql.slice(0, sql.length - 1).concat(';');
 }
 
-function sqlGenerateInsertCoachesToClassRoom(classroom_id, coach_array_selected) {
-    let sql = `insert into mapping_coach_classroom(
+function sqlGenerateInsertCoachesToClassRoom(classroomId, selectedCoachArray) {
+  let sql = `insert into mapping_coach_classroom(
         coach_id,
         classroom_id,
         created_at)
         values`;
-    coach_array_selected.forEach((value) => {
-        sql = sql.concat(`(${value.id}, ${classroom_id},now()),`)
-    });
-    return sql = sql.slice(0, sql.length - 1).concat(';');
+  selectedCoachArray.forEach((value) => {
+    sql = sql.concat(`(${value.id}, ${classroomId},now()),`);
+  });
+  return sql.slice(0, sql.length - 1).concat(';');
 }
 
 function sqlGenerateInsertToProfile(config, profile) {
-    return {
-        sql: `insert into profile(
+  return {
+    sql: `insert into profile(
             auth_id,
             fullname,
             country,
@@ -72,13 +64,13 @@ function sqlGenerateInsertToProfile(config, profile) {
                 ${profile.is_private_dob},
                 ${profile.is_private_parent}
                 );`,
-        timeout: config.db.queryTimeout
-    }
+    timeout: config.db.queryTimeout,
+  };
 }
 
 function sqlGenerateGetProfile(config, id) {
-    return {
-        sql: `select
+  return {
+    sql: `select
         fullname,
         country,
         state,
@@ -98,13 +90,13 @@ function sqlGenerateGetProfile(config, id) {
         is_private_parent
         from profile
         where auth_id = ${id};`,
-        timeout: config.db.queryTimeout
-    }
+    timeout: config.db.queryTimeout,
+  };
 }
 
 module.exports = {
-    sqlGenerateGetProfile,
-    sqlGenerateInsertToProfile,
-    sqlGenerateInsertStudentsToClassRoom,
-    sqlGenerateInsertCoachesToClassRoom
-}
+  sqlGenerateGetProfile,
+  sqlGenerateInsertToProfile,
+  sqlGenerateInsertStudentsToClassRoom,
+  sqlGenerateInsertCoachesToClassRoom,
+};

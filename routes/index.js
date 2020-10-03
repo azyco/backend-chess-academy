@@ -1,8 +1,9 @@
 const express = require('express');
+
 const router = express.Router();
 
 const classroomhandler = require('./classroom');
-const profilehandler   = require('./profile');
+const profilehandler = require('./profile');
 const coachhandler = require('./coach');
 const studenthandler = require('./student');
 const loginHandler = require('./login');
