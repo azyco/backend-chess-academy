@@ -15,8 +15,8 @@ const SQL = {
         mc.coach_id;`,
 'GET.STUDENTS': `select authentication.id,authentication.email,authentication.user_type,profile.fullname 
     from authentication, profile
-    where 
-        (authentication.id = profile.auth_id) 
+    where
+        (authentication.id = profile.auth_id)
         and authentication.user_type = "student";`
 };
 
