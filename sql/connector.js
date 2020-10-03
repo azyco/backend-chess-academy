@@ -9,6 +9,8 @@ var connection = mysql.createConnection({
     connectTimeout: config.db.connectionTimeout
 });
 
+const utils = require('./utils');
+
 var QUERY = require('./raw_sql.js');
 
 function getUserID(email) {
@@ -71,49 +73,7 @@ function createUserInDatabase(profile) {
                         });
                     } else {
                         profile.id = results[0].id;
-                        const sqlQuery3 = {
-                            sql: `insert into profile(
-                                auth_id,
-                                fullname,
-                                country,
-                                state,
-                                description,
-                                user_image,
-                                fide_id,
-                                contact,
-                                alt_contact,
-                                contact_code,
-                                alt_contact_code,
-                                lichess_id,
-                                dob,
-                                parent,
-                                is_private_contact,
-                                is_private_alt_contact,
-                                is_private_dob,
-                                is_private_parent
-                                ) 
-                                values(
-                                    ${profile.id},
-                                    '${profile.fullname}',
-                                    '${profile.country}',
-                                    '${profile.state}',
-                                    '${profile.description}',
-                                    '${profile.user_image}',
-                                    '${profile.fide_id}',
-                                    '${profile.contact}',
-                                    '${profile.alt_contact}',
-                                    '${profile.contact_code}',
-                                    '${profile.alt_contact_code}',
-                                    '${profile.lichess_id}',
-                                    STR_TO_DATE('${profile.dob}', '%Y-%m-%d'),
-                                    '${profile.parent}',
-                                    ${profile.is_private_contact},
-                                    ${profile.is_private_alt_contact},
-                                    ${profile.is_private_dob},
-                                    ${profile.is_private_parent}
-                                    );`,
-                            timeout: config.db.queryTimeout
-                        };
+                        const sqlQuery3 = utils.sqlGenerateInsertToProfile(config, profile);
                         connection.query(sqlQuery3, function (error, results, fields) {
                             if (error) {
                                 connection.rollback({
@@ -187,29 +147,7 @@ function getUserAuthentication(email) {
 }
 
 function getUserProfile(id) {
-    const sqlQuery = {
-        sql: `select
-        fullname,
-        country,
-        state,
-        description,
-        user_image,
-        fide_id,
-        contact,
-        alt_contact,
-        contact_code,
-        alt_contact_code,
-        lichess_id,
-        dob,
-        parent,
-        is_private_contact,
-        is_private_alt_contact,
-        is_private_dob,
-        is_private_parent
-        from profile
-        where auth_id = ${id};`,
-        timeout: config.db.queryTimeout
-    };
+    const sqlQuery = utils.sqlGenerateGetProfile(config, id);
     return new Promise((resolve, reject) => {
         connection.query(sqlQuery, function (error, results, fields) {
             if (error) {
@@ -335,22 +273,8 @@ function addClassroom(classroom_data) {
                         });
                     } else {
                         const classroom_id = results[0].id;
-                        let sql =
-                            `insert into mapping_coach_classroom(
-                            coach_id,
-                            classroom_id,
-                            created_at)
-                            values`;
-                        classroom_data.coach_array_selected.forEach((value) => {
-                            sql = sql.concat(
-                                `(
-                                    ${value.id},
-                                    ${classroom_id},
-                                    now()),`)
-                        });
-                        sql = sql.slice(0, sql.length - 1).concat(';');
                         const sqlQuery3 = {
-                            sql: sql,
+                            sql: utils.sqlGenerateInsertCoachesToClassRoom(classroom_id, classroom_data.coach_array_selected),
                             timeout: config.db.queryTimeout
                         }
                         connection.query(sqlQuery3, function (error, results, fields) {
@@ -361,23 +285,8 @@ function addClassroom(classroom_data) {
                                     reject(error);
                                 });
                             }
-                            let sql =
-                                `insert into mapping_student_classroom(
-                                student_id,
-                                classroom_id,
-                                created_at)
-                                values`;
-                            classroom_data.student_array_selected.forEach((value) => {
-                                sql = sql.concat(
-                                    `(
-                                        ${value.id},
-                                        ${classroom_id},
-                                        now()),`
-                                )
-                            });
-                            sql = sql.slice(0, sql.length - 1).concat(';');
                             const sqlQuery4 = {
-                                sql: sql,
+                                sql: utils.sqlGenerateInsertStudentsToClassRoom(classroom_id, classroom_data.student_array_selected),
                                 timeout: config.db.queryTimeout
                             }
                             connection.query(sqlQuery4, function (error, results, fields) {

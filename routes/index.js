@@ -3,6 +3,10 @@ const sqlConnector = require('../sql/connector');
 
 const router = express.Router();
 
+const classroomhandler = require('./classroom');
+const profilehandler   = require('./profile');
+const profile = require('./profile');
+
 router.get('/', (req, res) => {
   res.send('pong');
 });
@@ -220,115 +224,10 @@ router.get('/coach', (req, res) => {
   }
 });
 
-router.get('/profile', (req, res) => {
-  if (req.session.user_authentication) {
-    sqlConnector.getUserProfile(req.session.user_authentication.id).then((response) => {
-      console.log("user profile retrieved");
-      res.send({
-        user_profile: response.user_profile
-      });
-    }).catch((error) => {
-      console.log(error);
-      res.status(500).send({
-        error_type: 'database',
-        error_code: error.code,
-        error_message: error.sqlMessage
-      });
-    });
-  } else {
-    console.log("Bad Data");
-    res.sendStatus(400);
-  }
-});
+router.get('/profile', profilehandler.handleGetProfile);
+router.put('/profile', profilehandler.handleUpdateProfile);
 
-router.put('/profile', (req, res) => {
-  if (req.body.email &&
-    req.body.updated_user_profile) {
-    if (req.body.email === req.session.user_authentication.email) {
-      sqlConnector.getUserID(req.body.email).then((userID) => {
-        sqlConnector.updateUserProfile(userID, req.body.updated_user_profile).then((response) => {
-          sqlConnector.getUserProfile(req.session.user_authentication.id).then((response) => {
-            res.send({
-              user_profile: response.user_profile
-            });
-          }).catch(() => {
-            console.log(error);
-            res.status(500).send({
-              error_type: 'database',
-              error_code: error.code,
-              error_message: error.sqlMessage
-            });
-          });
-        }).catch((error) => {
-          console.log(error);
-          res.status(500).send({
-            error_type: 'database',
-            error_code: error.code,
-            error_message: error.sqlMessage
-          });
-        });
-      }).catch((error) => {
-        console.log(error);
-        res.status(500).send({
-          error_type: 'database',
-          error_code: error.code,
-          error_message: error.sqlMessage
-        });
-      });
-    } else {
-      console.log("Unauthorized");
-      res.sendStatus(401);
-    }
-  } else {
-    console.log("Bad Data");
-    res.sendStatus(400);
-  }
-});
-
-router.get('/classroom', (req, res) => {
-  if (req.session.user_authentication && req.session.user_authentication.user_type === 'admin') {
-    sqlConnector.getClassrooms().then((classrom_array) => {
-      console.log("classroom array sent");
-      res.send({
-        classrom_array: classrom_array
-      });
-    }).catch((error) => {
-      console.log(error);
-      res.status(500).send({
-        error_type: 'database',
-        error_code: error.code,
-        error_message: error.sqlMessage
-      });
-    });
-  } else {
-    res.sendStatus(403);
-  }
-});
-
-router.post('/classroom', (req, res) => {
-  console.log("posted classroom: ");
-  console.log(req.body.classroom_data);
-  if (req.session.user_authentication && req.session.user_authentication.user_type === 'admin') {
-    if (req.body.classroom_data) {
-      sqlConnector.addClassroom(req.body.classroom_data).then((response) => {
-        console.log("classroom added");
-        res.sendStatus(201);
-      }).catch((error) => {
-        console.log(error);
-        res.status(500).send({
-          error_type: 'database',
-          error_code: error.code,
-          error_message: error.sqlMessage
-        });
-      });
-    } else {
-      console.log("Bad Data");
-      res.sendStatus(400);
-    }
-  } else {
-    console.log("Unauthorized");
-    res.sendStatus(403);
-  }
-});
+router.get('/classroom', classroomhandler.handleGetClassRoom);
+router.post('/classroom', classroomhandler.handleClassRoomCreate);
 
 module.exports = router;
