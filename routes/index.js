@@ -27,5 +27,8 @@ router.put('/profile', profilehandler.handleUpdateProfile);
 
 router.get('/classroom', classroomhandler.handleGetClassRoom);
 router.post('/classroom', classroomhandler.handleCreateClassRoom);
+router.put('/classroom',classroomhandler.handleEditClassroom)
+
+router.get('/classroom_mappings', classroomhandler.handleGetClassroomMapping);
 
 module.exports = router;

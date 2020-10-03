@@ -183,22 +183,22 @@ function getUserProfile(id) {
   });
 }
 
-function updateUserProfile(userID, updatedUserProfile) {
+function updateUserProfile(userID, updated_user_profile) {
   const sqlQuery = {
     sql: `update profile
         set 
-        fullname = '${updatedUserProfile.fullname}',
-        state = '${updatedUserProfile.state}',
-        description = '${updatedUserProfile.description}',
-        fide_id = '${updatedUserProfile.fide_id}',
-        lichess_id = '${updatedUserProfile.lichess_id}',
-        parent = '${updatedUserProfile.parent}',
-        user_image = '${updatedUserProfile.photo_blob}',
-        dob = STR_TO_DATE('${updatedUserProfile.dob}', '%Y-%m-%d'),
-        is_private_parent = ${updatedUserProfile.is_private_parent},
-        is_private_contact =${updatedUserProfile.is_private_contact},
-        is_private_alt_contact = ${updatedUserProfile.is_private_alt_contact},
-        is_private_dob = ${updatedUserProfile.is_private_dob}
+        fullname = '${updated_user_profile.fullname}',
+        state = '${updated_user_profile.state}',
+        description = '${updated_user_profile.description}',
+        fide_id = '${updated_user_profile.fide_id}',
+        lichess_id = '${updated_user_profile.lichess_id}',
+        parent = '${updated_user_profile.parent}',
+        user_image = '${updated_user_profile.photo_blob}',
+        dob = STR_TO_DATE('${updated_user_profile.dob}', '%Y-%m-%d'),
+        is_private_parent = ${updated_user_profile.is_private_parent},
+        is_private_contact =${updated_user_profile.is_private_contact},
+        is_private_alt_contact = ${updated_user_profile.is_private_alt_contact},
+        is_private_dob = ${updated_user_profile.is_private_dob}
         where auth_id = ${userID};`,
     timeout: config.db.queryTimeout,
   };
@@ -231,8 +231,50 @@ function getClassrooms() {
   });
 }
 
+function getClassroomMappings(classroom_id) {
+  const sqlQuery1 = {
+    sql:
+        `select
+        student_id
+        from
+        mapping_student_classroom
+        where
+        classroom_id = ${classroom_id}
+        ;`,
+    timeout: config.db.queryTimeout,
+  };
+
+  const sqlQuery2 = {
+    sql:
+        `select
+        coach_id
+        from
+        mapping_coach_classroom
+        where
+        classroom_id = ${classroom_id}
+        ;`,
+    timeout: config.db.queryTimeout,
+  };
+
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery1, (error, results, fields) => {
+      if (error) {
+        reject(error);
+      }
+      student_id_arr_selected = results;
+      connection.query(sqlQuery2, (error, results, fields) => {
+        if (error) {
+          reject(error);
+        }
+        coach_id_arr_selected = results;
+        resolve({ student_id_arr_selected, coach_id_arr_selected });
+      });
+    });
+  });
+}
+
 // admin
-function addClassroom(classroomData) {
+function addClassroom(classroom_data) {
   const sqlQuery1 = {
     sql: `insert into classroom(
             name,
@@ -240,14 +282,14 @@ function addClassroom(classroomData) {
             is_active,
             created_at)
             values(
-                '${classroomData.classroom_name}',
-                '${classroomData.classroom_description}',
-                ${classroomData.is_active},
+                '${classroom_data.classroom_name}',
+                '${classroom_data.classroom_description}',
+                ${classroom_data.is_active},
                 now());`,
     timeout: config.db.queryTimeout,
   };
   const sqlQuery2 = {
-    sql: `select id from classroom where name = '${classroomData.classroom_name}';`,
+    sql: `select id from classroom where name = '${classroom_data.classroom_name}';`,
     timeout: config.db.queryTimeout,
   };
   return new Promise((resolve, reject) => {
@@ -273,10 +315,10 @@ function addClassroom(classroomData) {
               reject(selectErr);
             });
           } else {
-            const classroomId = results[0].id;
+            const classroom_id = results[0].id;
             const sqlQuery3 = {
-              sql: utils.sqlGenerateInsertCoachesToClassRoom(classroomId,
-                classroomData.coach_array_selected),
+              sql: utils.sqlGenerateInsertCoachesToClassRoom(classroom_id,
+                classroom_data.coach_array_selected),
               timeout: config.db.queryTimeout,
             };
             connection.query(sqlQuery3, (insertCoachErr) => {
@@ -288,8 +330,8 @@ function addClassroom(classroomData) {
                 });
               }
               const sqlQuery4 = {
-                sql: utils.sqlGenerateInsertStudentsToClassRoom(classroomId,
-                  classroomData.student_array_selected),
+                sql: utils.sqlGenerateInsertStudentsToClassRoom(classroom_id,
+                  classroom_data.student_array_selected),
                 timeout: config.db.queryTimeout,
               };
               connection.query(sqlQuery4, (insertStudentsErr) => {
@@ -319,6 +361,252 @@ function addClassroom(classroomData) {
     });
   });
 }
+
+function editClassroom(classroom_data) {
+  console.log(classroom_data);
+  const sql_edit_classroom = {
+    sql: `update classroom
+        set
+        name = '${classroom_data.classroom_name}',
+        description = '${classroom_data.classroom_description}'
+        where
+        id = ${classroom_data.classroom_id};`,
+    timeout: config.db.queryTimeout,
+  };
+
+  const sql_delete_student_mapping = {
+    sql: `delete
+        from
+        mapping_student_classroom
+        where
+        classroom_id = ${classroom_data.classroom_id}
+        ;`,
+    timeout: config.db.queryTimeout,
+  };
+
+  const sql_delete_coach_mapping = {
+    sql: `delete
+        from
+        mapping_coach_classroom
+        where
+        classroom_id = ${classroom_data.classroom_id}
+        ;`,
+    timeout: config.db.queryTimeout,
+  };
+
+  const sql_add_student_mapping = {
+    sql: utils.sqlGenerateInsertStudentsToClassRoom(classroom_data.classroom_id,
+      classroom_data.student_array_selected),
+    timeout: config.db.queryTimeout,
+  };
+
+  const sql_add_coach_mapping = {
+    sql: utils.sqlGenerateInsertCoachesToClassRoom(classroom_data.classroom_id,
+      classroom_data.coach_array_selected),
+    timeout: config.db.queryTimeout,
+  };
+
+  let updates = classroom_data.classroom_id + ',';
+
+
+
+  return new Promise((resolve, reject) => {
+    connection.beginTransaction({
+      timeout: config.db.queryTimeout,
+    }, (error) => {
+      if (error) {
+        reject(error);
+      }
+      else{
+        connection.query(sql_edit_classroom, (insertErr) => {
+          if (insertErr) {
+            connection.rollback({
+              timeout: config.db.queryTimeout,
+            }, () => {
+              reject(insertErr);
+            });
+          }
+          else{
+            updates = updates.concat("classroom details updated,");
+            connection.query(sql_delete_coach_mapping, (insertErr) => {
+              if (insertErr) {
+                connection.rollback({
+                  timeout: config.db.queryTimeout,
+                }, () => {
+                  reject(insertErr);
+                });
+              }
+              updates = updates.concat("deleted coach mapping,");
+              connection.query(sql_add_coach_mapping, (insertErr) => {
+                if (insertErr) {
+                  connection.rollback({
+                    timeout: config.db.queryTimeout,
+                  }, () => {
+                    reject(insertErr);
+                  });
+                }
+                else{
+                  updates = updates.concat("updated coach mapping,");
+                  connection.query(sql_delete_coach_mapping, (insertErr) => {
+                    if (insertErr) {
+                      connection.rollback({
+                        timeout: config.db.queryTimeout,
+                      }, () => {
+                        reject(insertErr);
+                      });
+                    }
+                    updates = updates.concat("deleted coach mapping,");
+                    connection.query(sql_add_coach_mapping, (insertErr) => {
+                      if (insertErr) {
+                        connection.rollback({
+                          timeout: config.db.queryTimeout,
+                        }, () => {
+                          reject(insertErr);
+                        });
+                      }
+                      else{
+                        updates = updates.concat("updated coach mapping,");
+                        connection.query(sql_delete_student_mapping, (insertErr) => {
+                          if (insertErr) {
+                            connection.rollback({
+                              timeout: config.db.queryTimeout,
+                            }, () => {
+                              reject(insertErr);
+                            });
+                          }
+                          updates = updates.concat("deleted student mapping,");
+                          connection.query(sql_add_student_mapping, (insertErr) => {
+                            if (insertErr) {
+                              connection.rollback({
+                                timeout: config.db.queryTimeout,
+                              }, () => {
+                                reject(insertErr);
+                              });
+                            }
+                            else{
+                              updates = updates.concat("updated student mapping,");
+                              connection.commit((commitErr) => {
+                                if (commitErr) {
+                                  connection.rollback({
+                                    timeout: config.db.queryTimeout,
+                                  }, () => {
+                                    reject(commitErr);
+                                  });
+                                } else {
+                                  updates = updates.concat("commited");
+                                  resolve(updates);
+                                }
+                              });
+                            }
+                          });
+                        });
+                      }
+                    });
+                  });
+                }
+              });
+            });
+          }
+        });
+      }
+    });
+  });
+}
+  // return new Promise((resolve, reject) => {
+  //   connection.beginTransaction({
+  //     timeout: config.db.queryTimeout,
+  //   }, (error) => {
+  //     if (error) {
+  //       reject(error);
+  //       return;
+  //     }
+
+  //     if(classroom_data.classroom_details_is_dirty){
+  //       connection.query(sql_edit_classroom, (insertErr) => {
+  //         if (insertErr) {
+  //           connection.rollback({
+  //             timeout: config.db.queryTimeout,
+  //           }, () => {
+  //             reject(insertErr);
+  //             return;
+  //           });
+  //         }
+  //         updates = updates.concat("classroom details updated,");
+  //         console.log("classroom details updated,");
+  //       });
+  //     }
+
+  //     if(classroom_data.coach_array_selected_is_dirty){
+  //       connection.query(sql_delete_coach_mapping, (insertErr) => {
+  //         if (insertErr) {
+  //           connection.rollback({
+  //             timeout: config.db.queryTimeout,
+  //           }, () => {
+  //             reject(insertErr);
+  //             return;
+  //           });
+  //         }
+  //         updates = updates.concat("deleted coach mapping,");
+  //         console.log("deleted coach mapping,");
+  //         connection.query(sql_add_coach_mapping, (insertErr) => {
+  //           if (insertErr) {
+  //             connection.rollback({
+  //               timeout: config.db.queryTimeout,
+  //             }, () => {
+  //               reject(insertErr);
+  //               return;
+  //             });
+  //           }
+  //           updates = updates.concat("updated coach mapping,");
+  //           console.log("updated coach mapping,");
+  //         });
+  //       });
+  //     }
+
+  //     if(classroom_data.student_array_selected_is_dirty){
+  //       connection.query(sql_delete_student_mapping, (insertErr) => {
+  //         if (insertErr) {
+  //           connection.rollback({
+  //             timeout: config.db.queryTimeout,
+  //           }, () => {
+  //             reject(insertErr);
+  //             return;
+  //           });
+  //         }
+  //         updates = updates.concat("deleted student mapping,");
+  //         console.log("deleted student mapping,");
+  //         connection.query(sql_add_student_mapping, (insertErr) => {
+  //           if (insertErr) {
+  //             connection.rollback({
+  //               timeout: config.db.queryTimeout,
+  //             }, () => {
+  //               reject(insertErr);
+  //               return;
+  //             });
+  //           }
+  //           updates = updates.concat("updated student mapping,");
+  //           console.log("updated student mapping,");
+  //         });
+  //       });
+  //     }
+      
+  //     connection.commit((commitErr) => {
+  //       if (commitErr) {
+  //         connection.rollback({
+  //           timeout: config.db.queryTimeout,
+  //         }, () => {
+  //           reject(commitErr);
+  //           return;
+  //         });
+  //       } else {
+  //         console.log('commited');
+  //         updates = updates.concat("commited");
+  //         resolve(updates);
+  //         return;
+  //       }
+  //     });
+  //   });
+  // });
 
 // admin
 function getStudents() {
@@ -369,7 +657,9 @@ module.exports = {
   getUserProfile,
   updateUserProfile,
   getClassrooms,
+  getClassroomMappings,
   addClassroom,
   getStudents,
   getCoaches,
+  editClassroom
 };
