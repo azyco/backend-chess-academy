@@ -9,6 +9,8 @@ var connection = mysql.createConnection({
     connectTimeout: config.db.connectionTimeout
 });
 
+var QUERY = require('./raw_sql.js');
+
 function getUserID(email) {
     const sqlQuery = {
         sql: `select id from authentication where email = '${email}';`,
@@ -274,27 +276,7 @@ function updateUserProfile(userID, updated_user_profile) {
 //admin
 function getClassrooms() {
     const sqlQuery = {
-        sql: 
-        `select
-        classroom.id,
-        classroom.name,
-        classroom.description,
-        classroom.is_active,
-        classroom.created_at,
-        count(ms.student_id) as student_count,
-        group_concat(p.fullname) as coaches
-        from
-        classroom,
-        mapping_student_classroom as ms,
-        mapping_coach_classroom as mc,
-        profile as p
-        where
-        classroom.id = ms.classroom_id AND
-        classroom.id = mc.classroom_id AND
-        mc.coach_id = p.auth_id
-        group by
-        mc.coach_id
-        ;`,
+        sql: QUERY.SQL['GET.CLASSROOMS'],
         timeout: config.db.queryTimeout
     };
     return new Promise((resolve, reject) => {
@@ -430,11 +412,7 @@ function addClassroom(classroom_data) {
 //admin
 function getStudents() {
     const sqlQuery = {
-        sql: `select authentication.id,authentication.email,authentication.user_type,profile.fullname 
-        from authentication, profile
-        where 
-        (authentication.id = profile.auth_id) 
-        and authentication.user_type = "student";`,
+        sql: QUERY.SQL['GET.STUDENTS'],
         timeout: config.db.queryTimeout
     };
     return new Promise((resolve, reject) => {
