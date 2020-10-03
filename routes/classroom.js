@@ -20,7 +20,7 @@ function handleGetClassRoom(req, res) {
     }
 }
 
-function handleClassRoomCreate(req, res) {
+function handleCreateClassRoom(req, res) {
     console.log("posted classroom: ");
     console.log(req.body.classroom_data);
     if (req.session.user_authentication && req.session.user_authentication.user_type === 'admin') {
@@ -48,5 +48,5 @@ function handleClassRoomCreate(req, res) {
 
 module.exports = {
     handleGetClassRoom,
-    handleClassRoomCreate
+    handleCreateClassRoom
 }
