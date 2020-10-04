@@ -233,26 +233,27 @@ function getClassrooms() {
 
 function getClassroomMappings(classroom_id) {
   const sqlQuery1 = {
-    sql:
-        `select
-        student_id
-        from
-        mapping_student_classroom
-        where
-        classroom_id = ${classroom_id}
-        ;`,
-    timeout: config.db.queryTimeout,
-  };
-
-  const sqlQuery2 = {
-    sql:
-        `select
-        coach_id
-        from
-        mapping_coach_classroom
-        where
-        classroom_id = ${classroom_id}
-        ;`,
+    sql:`
+      select
+        classroom.id,
+        GROUP_CONCAT(mc.coach_id) as coaches,
+        cinfo.students
+      from
+        classroom
+        LEFT JOIN mapping_coach_classroom as mc ON classroom.id = mc.classroom_id,
+        (
+          select
+            ms.classroom_id as cid,
+            GROUP_CONCAT(ms.student_id) as students
+          from
+            mapping_student_classroom as ms
+          where
+            ms.classroom_id = ${classroom_id}
+        ) as cinfo
+      where
+        classroom.id = ${classroom_id}
+        AND cinfo.cid = id
+      ;`,
     timeout: config.db.queryTimeout,
   };
 
@@ -261,14 +262,9 @@ function getClassroomMappings(classroom_id) {
       if (error) {
         reject(error);
       }
-      student_id_arr_selected = results;
-      connection.query(sqlQuery2, (error, results, fields) => {
-        if (error) {
-          reject(error);
-        }
-        coach_id_arr_selected = results;
-        resolve({ student_id_arr_selected, coach_id_arr_selected });
-      });
+      else{
+        resolve(results[0]);
+      }
     });
   });
 }

@@ -1,18 +1,40 @@
 const SQL = {
-  'GET.CLASSROOMS': `select classroom.id, classroom.name, classroom.description,
-    classroom.is_active, classroom.created_at, count(ms.student_id) as student_count, group_concat(p.fullname) as coaches
+  'GET.CLASSROOMS': `select
+  students_result.cid as id,
+  coaches_result.cname as name,
+  coaches_result.description,
+  coaches_result.created_at,
+  coaches_result.is_active,
+  coaches_result.coaches,
+  students_result.students as student_count
+from
+  (
+    SELECT
+      ms.classroom_id as cid,
+      count(ms.student_id) as students
     from
-        classroom,
-        mapping_student_classroom as ms,
-        mapping_coach_classroom as mc,
-        profile as p
-    where
-        classroom.id = ms.classroom_id AND
-        classroom.id = mc.classroom_id AND
-        mc.coach_id = p.auth_id
+      mapping_student_classroom as ms
     group by
-        classroom.id,
-        mc.coach_id;`,
+      ms.classroom_id
+  ) students_result
+  INNER JOIN (
+    select
+      classroom.id as cid,
+      classroom.name as cname,
+      classroom.description as description,
+      classroom.is_active,
+      classroom.created_at,
+      GROUP_CONCAT(p.fullname) as coaches
+    from
+      classroom
+      LEFT JOIN mapping_coach_classroom as mc ON classroom.id = mc.classroom_id,
+      profile as p
+    where
+      coach_id = p.auth_id
+    group by
+      classroom.id
+  ) AS coaches_result ON students_result.cid = coaches_result.cid;`,
+
   'GET.STUDENTS': `select authentication.id,authentication.email,authentication.user_type,profile.fullname 
     from authentication, profile
     where

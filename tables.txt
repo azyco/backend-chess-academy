@@ -1,11 +1,11 @@
 create table authentication(
-  id int unsigned auto_increment,
+  id int unsigned primary key auto_increment,
   user_type varchar(10) not null,
-  email varchar(100) not null unique,
+  email varchar(100) unique not null,
   hashed_password varchar(40) not null,
   created_at timestamp not null
-);
-
+  )
+  
 insert into authentication(
   user_type,
   email,
