@@ -40,6 +40,24 @@ from
     where
         (authentication.id = profile.auth_id)
         and authentication.user_type = "student";`,
+
+  'GET.COACHES': `select authentication.id,authentication.email,authentication.user_type,profile.fullname 
+  from authentication, profile
+  where 
+  (authentication.id = profile.auth_id) 
+  and authentication.user_type = "coach";`,
+
+  'GET.USERS': `select
+  profile.fullname,
+  authentication.id,
+  authentication.user_type,
+  authentication.email
+  from
+  authentication,
+  profile
+  where
+  authentication.id = profile.auth_id and
+  (authentication.user_type = 'coach' or authentication.user_type = 'student');`
 };
 
 exports.SQL = SQL;

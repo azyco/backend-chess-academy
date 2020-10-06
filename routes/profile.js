@@ -3,7 +3,7 @@ const sqlConnector = require('../sql/connector');
 function handleGetProfile(req, res) {
     if (req.session.user_authentication) {
         sqlConnector.getUserProfile(req.session.user_authentication.id).then((response) => {
-        console.log("user profile retrieved", response);
+        console.log("user profile retrieved");
         res.send({
             user_profile: response.user_profile
         });
