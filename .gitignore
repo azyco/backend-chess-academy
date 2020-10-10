@@ -1,3 +1,5 @@
 node_modules/**
 build/*
 config.dev.js
+pm2.js
+
