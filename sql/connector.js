@@ -233,7 +233,7 @@ function getClassrooms() {
 
 function getClassroomMappings(classroom_id) {
 	const sqlQuery1 = {
-		sql:`
+		sql: `
 			select
 				classroom.id,
 				GROUP_CONCAT(mc.coach_id) as coaches,
@@ -262,7 +262,7 @@ function getClassroomMappings(classroom_id) {
 			if (error) {
 				reject(error);
 			}
-			else{
+			else {
 				resolve(results[0]);
 			}
 		});
@@ -401,10 +401,10 @@ function editClassroom(classroom_data) {
 		timeout: config.db.queryTimeout,
 	};
 
-	let updates = "id: "+classroom_data.classroom_id + ',';
+	let updates = "id: " + classroom_data.classroom_id + ',';
 
 	return new Promise((resolve, reject) => {
-		try{
+		try {
 			connection.beginTransaction({
 				timeout: config.db.queryTimeout,
 			}, (error) => {
@@ -412,7 +412,7 @@ function editClassroom(classroom_data) {
 					reject(error);
 				}
 
-				if(classroom_data.classroom_details_is_dirty){
+				if (classroom_data.classroom_details_is_dirty) {
 					connection.query(sql_edit_classroom, (insertErr) => {
 						if (insertErr) {
 							connection.rollback({
@@ -425,7 +425,7 @@ function editClassroom(classroom_data) {
 					});
 				}
 
-				if(classroom_data.coach_array_selected_is_dirty){
+				if (classroom_data.coach_array_selected_is_dirty) {
 					connection.query(sql_delete_coach_mapping, (insertErr) => {
 						if (insertErr) {
 							connection.rollback({
@@ -450,7 +450,7 @@ function editClassroom(classroom_data) {
 
 			});
 
-			if(classroom_data.student_array_selected_is_dirty){
+			if (classroom_data.student_array_selected_is_dirty) {
 				connection.query(sql_delete_student_mapping, (insertErr) => {
 					if (insertErr) {
 						connection.rollback({
@@ -487,7 +487,7 @@ function editClassroom(classroom_data) {
 			});
 
 		}
-		catch(error){
+		catch (error) {
 			reject(error);
 		}
 	});
@@ -548,9 +548,9 @@ function getUsers() {
 	});
 }
 
-function getClassroomsStudent(student_id){
+function getClassroomsStudent(student_id) {
 	const sqlQuery = {
-		sql:`select
+		sql: `select
 		classroom.id,
 		classroom.name,
 		classroom.description,
@@ -582,9 +582,9 @@ function getClassroomsStudent(student_id){
 	});
 }
 
-function getClassroomsCoach(coach_id){
+function getClassroomsCoach(coach_id) {
 	const sqlQuery = {
-		sql:`select
+		sql: `select
 		classroom.id,
 		classroom.name,
 		classroom.description,
@@ -616,6 +616,141 @@ function getClassroomsCoach(coach_id){
 	});
 }
 
+
+function addClass(class_details) {
+	const sqlQuery = {
+		sql: `insert into class(
+			classroom_id,
+			start_time,
+			duration,
+			created_at
+		  )
+		  values(
+			${class_details.classroom_id},
+			'${class_details.start_time}',
+			${class_details.duration},
+			now()
+		  );`,
+		timeout: config.db.queryTimeout
+	}
+	return new Promise((resolve, reject) => {
+		connection.query(sqlQuery, (error) => {
+			if (error) {
+				reject(error);
+			} else {
+				resolve();
+			}
+		});
+	});
+}
+
+function getClasses(classroom_id) {
+	const sqlQuery = {
+		sql: `select 
+		id,
+		classroom_id,
+		start_time,
+		duration,
+		created_at
+		from
+		class
+		where
+		classroom_id = ${classroom_id}
+		;`,
+		timeout: config.db.queryTimeout
+	}
+	return new Promise((resolve, reject) => {
+		connection.query(sqlQuery, (error, results) => {
+			if (error) {
+				reject(error);
+			}
+			else {
+				resolve(results);
+			}
+		});
+	});
+}
+
+function deleteClass(class_id) {
+	const sqlQuery = {
+		sql: `delete
+		from class
+		where
+		id = ${class_id};`,
+		timeout: config.db.queryTimeout
+	}
+	return new Promise((resolve, reject) => {
+		connection.query(sqlQuery, (error) => {
+			if (error) {
+				reject(error);
+			}
+			else {
+				resolve();
+			}
+		});
+	});
+}
+
+function checkClassroomAccessPrivilegeCoach(coach_id, classroom_id){
+	const sqlQuery = {
+		sql: `select
+		classroom_id,
+		coach_id
+		from
+		mapping_coach_classroom
+		where
+		coach_id = ${coach_id} and
+		classroom_id = ${classroom_id}
+		;`,
+		timeout: config.db.queryTimeout
+	}
+	return new Promise((resolve, reject) => {
+		connection.query(sqlQuery, (error,results) => {
+			if (error) {
+				reject(error);
+			}
+			else {
+				if(results.length === 0){
+					resolve(false);
+				}
+				else{
+					resolve(true);
+				}
+			}
+		});
+	});
+}
+
+function checkClassroomAccessPrivilegeStudent(student_id, classroom_id){
+	const sqlQuery = {
+		sql: `select
+		classroom_id,
+		student_id
+		from
+		mapping_student_classroom
+		where
+		student_id = ${student_id} and
+		classroom_id = ${classroom_id}
+		;`,
+		timeout: config.db.queryTimeout
+	}
+	return new Promise((resolve, reject) => {
+		connection.query(sqlQuery, (error,results) => {
+			if (error) {
+				reject(error);
+			}
+			else {
+				if(results.length === 0){
+					resolve(false);
+				}
+				else{
+					resolve(true);
+				}
+			}
+		});
+	});
+}
+
 module.exports = {
 	getUserID,
 	createUserInDatabase,
@@ -631,5 +766,10 @@ module.exports = {
 	getUsers,
 	editClassroom,
 	getClassroomsStudent,
-	getClassroomsCoach
+	getClassroomsCoach,
+	getClasses,
+	addClass,
+	deleteClass,
+	checkClassroomAccessPrivilegeCoach,
+	checkClassroomAccessPrivilegeStudent
 };
