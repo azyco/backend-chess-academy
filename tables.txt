@@ -85,11 +85,12 @@ create table class(
   start_time timestamp not null,
   duration int,
   created_at timestamp not null,
+  uuid varchar(32) not null unique,
   primary key(id),
   constraint foreign key(classroom_id) references classroom(id)
   on delete cascade
   on update cascade
-);
+  );
 
 select
 classroom.id,

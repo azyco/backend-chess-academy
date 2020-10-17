@@ -1,5 +1,6 @@
 const mysql = require('mysql');
 const config = require('../config');
+const crypto = require('crypto');
 
 const connection = mysql.createConnection({
 	host: config.db.host,
@@ -618,18 +619,21 @@ function getClassroomsCoach(coach_id) {
 
 
 function addClass(class_details) {
+	const uuid = crypto.createHash('md5').update(new Date().toISOString()).digest('hex');
 	const sqlQuery = {
 		sql: `insert into class(
 			classroom_id,
 			start_time,
 			duration,
-			created_at
+			created_at,
+			uuid
 		  )
 		  values(
 			${class_details.classroom_id},
 			'${class_details.start_time}',
 			${class_details.duration},
-			now()
+			now(),
+			'${uuid}'
 		  );`,
 		timeout: config.db.queryTimeout
 	}
@@ -651,7 +655,8 @@ function getClasses(classroom_id) {
 		classroom_id,
 		start_time,
 		duration,
-		created_at
+		created_at,
+		uuid
 		from
 		class
 		where
@@ -691,7 +696,7 @@ function deleteClass(class_id) {
 	});
 }
 
-function checkClassroomAccessPrivilegeCoach(coach_id, classroom_id){
+function checkClassroomAccessPrivilegeCoach(coach_id, classroom_id) {
 	const sqlQuery = {
 		sql: `select
 		classroom_id,
@@ -705,15 +710,15 @@ function checkClassroomAccessPrivilegeCoach(coach_id, classroom_id){
 		timeout: config.db.queryTimeout
 	}
 	return new Promise((resolve, reject) => {
-		connection.query(sqlQuery, (error,results) => {
+		connection.query(sqlQuery, (error, results) => {
 			if (error) {
 				reject(error);
 			}
 			else {
-				if(results.length === 0){
+				if (results.length === 0) {
 					resolve(false);
 				}
-				else{
+				else {
 					resolve(true);
 				}
 			}
@@ -721,7 +726,7 @@ function checkClassroomAccessPrivilegeCoach(coach_id, classroom_id){
 	});
 }
 
-function checkClassroomAccessPrivilegeStudent(student_id, classroom_id){
+function checkClassroomAccessPrivilegeStudent(student_id, classroom_id) {
 	const sqlQuery = {
 		sql: `select
 		classroom_id,
@@ -735,15 +740,15 @@ function checkClassroomAccessPrivilegeStudent(student_id, classroom_id){
 		timeout: config.db.queryTimeout
 	}
 	return new Promise((resolve, reject) => {
-		connection.query(sqlQuery, (error,results) => {
+		connection.query(sqlQuery, (error, results) => {
 			if (error) {
 				reject(error);
 			}
 			else {
-				if(results.length === 0){
+				if (results.length === 0) {
 					resolve(false);
 				}
-				else{
+				else {
 					resolve(true);
 				}
 			}

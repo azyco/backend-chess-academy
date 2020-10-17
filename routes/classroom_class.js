@@ -6,7 +6,7 @@ function handleGetClasses(req, res) {
       sqlConnector.checkClassroomAccessPrivilegeStudent(req.session.user_authentication.id, req.query.classroom_id).then((user_has_privilege) => {
         if (user_has_privilege) {
           sqlConnector.getClasses(req.query.classroom_id).then((class_array) => {
-            console.log('class array sent');
+            console.log('class array sent for student');
             res.status(200).send(class_array);
           }).catch((error) => {
             console.log(error);
@@ -18,6 +18,7 @@ function handleGetClasses(req, res) {
           });
         }
         else {
+          console.log("unauthorized student trying to access class")
           res.sendStatus(403);
         }
       }).catch((error) => {
@@ -33,7 +34,7 @@ function handleGetClasses(req, res) {
       sqlConnector.checkClassroomAccessPrivilegeCoach(req.session.user_authentication.id, req.query.classroom_id).then((user_has_privilege) => {
         if (user_has_privilege) {
           sqlConnector.getClasses(req.query.classroom_id).then((class_array) => {
-            console.log('class array sent');
+            console.log('class array sent for coach');
             res.status(200).send(class_array);
           }).catch((error) => {
             console.log(error);
@@ -45,6 +46,7 @@ function handleGetClasses(req, res) {
           });
         }
         else {
+          console.log("unauthorized coach trying to access class")
           res.sendStatus(403);
         }
       }).catch((error) => {
@@ -58,7 +60,7 @@ function handleGetClasses(req, res) {
     }
     else if (req.session.user_authentication.user_type === 'admin') {
       sqlConnector.getClasses(req.query.classroom_id).then((class_array) => {
-        console.log('class array sent');
+        console.log('class array sent for admin');
         res.status(200).send(class_array);
       }).catch((error) => {
         console.log(error);
@@ -69,7 +71,12 @@ function handleGetClasses(req, res) {
         });
       });
     }
+    else{
+      console.log("unauthorized user with invalid user type trying to access class");
+      res.sendStatus(403);
+    }
   } else {
+    console.log("unauthorized user with no authentication trying to access class");
     res.sendStatus(403);
   }
 }
@@ -80,7 +87,7 @@ function handleAddClass(req, res) {
       sqlConnector.checkClassroomAccessPrivilegeCoach(req.session.user_authentication.id, req.body.class_details.classroom_id).then((user_has_privilege) => {
         if (user_has_privilege) {
           sqlConnector.addClass(req.body.class_details).then((response) => {
-            console.log('class added');
+            console.log('class added by coach');
             res.send(response);
           }).catch((error) => {
             console.log(error);
@@ -92,6 +99,7 @@ function handleAddClass(req, res) {
           });
         }
         else {
+          console.log("unauthorized coach trying to add class")
           res.sendStatus(403);
         }
       }).catch((error) => {
@@ -105,7 +113,7 @@ function handleAddClass(req, res) {
     }
     else if (req.session.user_authentication.user_type === 'admin') {
       sqlConnector.addClass(req.body.class_details).then((response) => {
-        console.log('class added');
+        console.log('class added by admin');
         res.send(response);
       }).catch((error) => {
         console.log(error);
@@ -116,9 +124,13 @@ function handleAddClass(req, res) {
         });
       });
     }
-
+    else{
+      console.log("unauthorized user with invalid user type trying to add class");
+      res.sendStatus(403);
+    }
   }
   else {
+    console.log("unauthorized user with no authentication trying to add class");
     res.sendStatus(403);
   }
 }
@@ -130,7 +142,7 @@ function handleDeleteClass(req, res) {
       sqlConnector.checkClassroomAccessPrivilegeCoach(req.session.user_authentication.id, req.query.classroom_id).then((user_has_privilege) => {
         if (user_has_privilege) {
           sqlConnector.deleteClass(req.query.class_id).then((response) => {
-            console.log('class deleted');
+            console.log('class deleted by coach');
             res.status(201).send(response);
           }).catch((error) => {
             console.log(error);
@@ -142,6 +154,7 @@ function handleDeleteClass(req, res) {
           });
         }
         else {
+          console.log("unauthorized coach trying to delete classroom")
           res.sendStatus(403);
         }
       }).catch((error) => {
@@ -155,7 +168,7 @@ function handleDeleteClass(req, res) {
     }
     else if (req.session.user_authentication.user_type === 'admin') {
       sqlConnector.deleteClass(req.query.class_id).then((response) => {
-        console.log('class deleted');
+        console.log('class deleted by admin');
         res.status(201).send(response);
       }).catch((error) => {
         console.log(error);
@@ -166,8 +179,12 @@ function handleDeleteClass(req, res) {
         });
       });
     }
-
+    else{
+      console.log("unauthorized user with invalid user type trying to delete class");
+      res.sendStatus(403);
+    }
   } else {
+    console.log("unauthorized user with no authentication trying to delete class");
     res.sendStatus(403);
   }
 }

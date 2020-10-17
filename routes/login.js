@@ -39,7 +39,7 @@ function handleCreateLogin(req, res) {
         if (inputPasswordHash === dbPasswordHash) {
           sqlConnector.getUserAuthentication(email).then((response) => {
             req.session.user_authentication = response.user_authentication;
-            console.log('user logged in');
+            console.log('user logged in as ' + response.user_authentication.user_type);
             res.send({
               user_authentication: response.user_authentication,
             });
@@ -72,13 +72,14 @@ function handleCreateLogin(req, res) {
       });
     });
   } else {
-    console.log('Bad Data');
+    console.log("bad request while trying to login");
     res.sendStatus(400);
   }
 }
 
 function handleLogout(req, res) {
   req.session.destroy(() => {
+    console.log("user logged out/session destroyed");
     res.status(204).send();
   });
 }
