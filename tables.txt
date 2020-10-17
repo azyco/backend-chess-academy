@@ -78,3 +78,74 @@ create table profile(
   on delete cascade
   on update cascade
 )
+
+create table class(
+  id int unsigned auto_increment,
+  classroom_id int unsigned not null,
+  start_time timestamp not null,
+  duration int,
+  created_at timestamp not null,
+  primary key(id),
+  constraint foreign key(classroom_id) references classroom(id)
+  on delete cascade
+  on update cascade
+);
+
+select
+classroom.id,
+classroom.name,
+classroom.description,
+count(profile.fullname) as student_count
+from
+classroom,
+mapping_student_classroom,
+mapping_coach_classroom,
+profile
+where
+mapping_coach_classroom.coach_id = 3 and
+classroom.id = mapping_coach_classroom.classroom_id and
+mapping_student_classroom.classroom_id = classroom.id and
+mapping_student_classroom.student_id = profile.auth_id
+group by
+classroom.id
+
+select
+classroom.id,
+classroom.name,
+classroom.description,
+group_concat(profile.fullname) as coaches
+from
+classroom,
+mapping_student_classroom,
+mapping_coach_classroom,
+profile
+where
+mapping_student_classroom.student_id = 4 and
+classroom.id = mapping_student_classroom.classroom_id and
+mapping_coach_classroom.classroom_id = classroom.id and
+mapping_coach_classroom.coach_id = profile.auth_id
+group by
+classroom.id
+
+select
+	students_result.cid as classroom_id,
+    coaches_result.cname as classroom_name,
+    coaches_result.description,
+    coaches_result.created_at,
+    coaches_result.coaches,
+    students_result.students
+from
+(SELECT ms.classroom_id as cid, count(ms.student_id) as students from mapping_student_classroom as ms
+group by ms.classroom_id) students_result
+INNER JOIN
+(select classroom.id as cid, classroom.name as cname, classroom.description as description,
+    classroom.is_active, classroom.created_at,
+    GROUP_CONCAT(p.fullname) as coaches
+    from
+        classroom LEFT JOIN mapping_coach_classroom as mc ON classroom.id = mc.classroom_id,
+		profile as p
+ 	where
+ 		coach_id = p.auth_id
+	group by
+        classroom.id) AS coaches_result
+ ON students_result.cid = coaches_result.cid
