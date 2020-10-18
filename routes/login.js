@@ -30,9 +30,11 @@ function handleGetLogin(req, res) {
  * Login a user by checking password hash
  */
 function handleCreateLogin(req, res) {
-  if (req.body.email
-      && req.body.password_hash) {
-    const { email } = req.body;
+  if (req.body.email &&
+    req.body.password_hash) {
+    const {
+      email
+    } = req.body;
     const inputPasswordHash = req.body.password_hash;
     sqlConnector.getPasswordHash(email).then((dbPasswordHash) => {
       if (dbPasswordHash) {

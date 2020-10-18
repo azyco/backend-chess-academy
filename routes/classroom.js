@@ -45,11 +45,10 @@ function handleGetClassRoom(req, res) {
         });
       });
     } else {
-      console.log("unauthorized user with invalid user type trying to access classrooms");
+      console.log("unauthorized user with invalid user type trying to access classrooms ", req.session.user_authentication);
       res.sendStatus(403);
     }
-  }
-  else {
+  } else {
     console.log("unauthorized user no authentication user type trying to access classrooms");
     res.sendStatus(403);
   }
@@ -75,11 +74,10 @@ function handleCreateClassRoom(req, res) {
         res.sendStatus(400);
       }
     } else {
-      console.log("unauthorized user with invalid user type trying to add classrooms");
+      console.log("unauthorized user with invalid user type trying to add classrooms ", req.session.user_authentication);
       res.sendStatus(403);
     }
-  }
-  else {
+  } else {
     console.log("unauthorized user with no authentication trying to add classrooms");
     res.sendStatus(403);
   }
@@ -100,11 +98,10 @@ function handleGetClassroomMapping(req, res) {
         });
       });
     } else {
-      console.log("unauthorized user with invalid user type trying to get classroom mappings");
+      console.log("unauthorized user with invalid user type trying to get classroom mappings ", req.session.user_authentication);
       res.sendStatus(403);
     }
-  }
-  else {
+  } else {
     console.log("unauthorized user with no authentication trying to get classroom mappings");
     res.sendStatus(403);
   }
@@ -130,18 +127,17 @@ function handleEditClassroom(req, res) {
         res.sendStatus(400);
       }
     } else {
-      console.log("unauthorized user with invalid user type trying to edit classroom");
+      console.log("unauthorized user with invalid user type trying to edit classroom ", req.session.user_authentication);
       res.sendStatus(403);
     }
-  }
-  else {
+  } else {
     console.log("unauthorized user with no authentication trying to edit classroom");
     res.sendStatus(403);
   }
 }
 
 function handleGetUsers(req, res) {
-  if(req.session.user_authentication){
+  if (req.session.user_authentication) {
     if (req.session.user_authentication.user_type === 'admin') {
       sqlConnector.getUsers(req.query.classroom_id).then((user_array) => {
         console.log('users array sent for admin');
@@ -155,11 +151,10 @@ function handleGetUsers(req, res) {
         });
       });
     } else {
-      console.log("unauthorized user with invalid user type trying to get users");
+      console.log("unauthorized user with invalid user type trying to get users ", req.session.user_authentication);
       res.sendStatus(403);
     }
-  }
-  else{
+  } else {
     console.log("unauthorized user with no authentication trying to get users");
     res.sendStatus(403);
   }

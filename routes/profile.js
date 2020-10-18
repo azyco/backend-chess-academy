@@ -16,14 +16,14 @@ function handleGetProfile(req, res) {
       });
     });
   } else {
-    console.log("unauthorized user with no authentication trying to access profile");
+    console.log("unauthorized user with no authentication trying to access profile ", req.session.user_authentication);
     res.sendStatus(403);
   }
 }
 
 function handleUpdateProfile(req, res) {
   if (req.session.user_authentication) {
-    if(req.session.user_authentication.user_type === 'student' || req.session.user_authentication.user_type === 'coach'){
+    if (req.session.user_authentication.user_type === 'student' || req.session.user_authentication.user_type === 'coach') {
       if (req.body.email &&
         req.body.updated_user_profile) {
         if (req.body.email === req.session.user_authentication.email) {
@@ -59,20 +59,18 @@ function handleUpdateProfile(req, res) {
             });
           });
         } else {
-          console.log("unauthorized user with email mismatch trying to edit profile");
+          console.log("unauthorized user with email mismatch trying to edit profile ", req.session.user_authentication);
           res.sendStatus(403);
         }
       } else {
         console.log("bad request while trying to edit profile");
         res.sendStatus(400);
       }
-    }
-    else{
-      console.log("unauthorized user with invalid user type trying to edit profile");
+    } else {
+      console.log("unauthorized user with invalid user type trying to edit profile ", req.session.user_authentication);
       res.sendStatus(403);
     }
-  }
-  else{
+  } else {
     console.log("unauthorized user with no authentication trying to edit profile");
     res.sendStatus(403);
   }

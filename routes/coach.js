@@ -17,11 +17,10 @@ function handleGetCoach(req, res) {
         });
       });
     } else {
-      console.log("unauthorized user with invalid user type trying to get coaches");
+      console.log("unauthorized user with invalid user type trying to get coaches ", req.session.user_authentication);
       res.sendStatus(403);
     }
-  }
-  else {
+  } else {
     console.log("unauthorized user with no authentication trying to get coaches");
     res.sendStatus(403);
   }
@@ -56,7 +55,7 @@ function handleCreateCoach(req, res) {
           is_private_dob: 1,
           is_private_parent: 1,
         }).then((response) => {
-          console.log('coach created by admin', response);
+          console.log('coach created by admin', req.body.registration_details.email);
           res.status(201).send();
         }).catch((error) => {
           console.log(error);
@@ -71,11 +70,10 @@ function handleCreateCoach(req, res) {
         res.sendStatus(400);
       }
     } else {
-      console.log("unauthorized user with invalid user type trying to add coach");
+      console.log("unauthorized user with invalid user type trying to add coach ", req.session.user_authentication);
       res.sendStatus(403);
     }
-  }
-  else {
+  } else {
     console.log("unauthorized user with no authentication trying to add coach");
     res.sendStatus(403);
   }

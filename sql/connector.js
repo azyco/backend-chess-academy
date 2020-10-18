@@ -223,8 +223,6 @@ function getClassrooms() {
 		connection.query(sqlQuery, (error, results) => {
 			if (error) {
 				reject(error);
-			} else if (results.length === 0) {
-				resolve(0);
 			} else {
 				resolve(results);
 			}
@@ -504,8 +502,6 @@ function getStudents() {
 		connection.query(sqlQuery, (error, results) => {
 			if (error) {
 				reject(error);
-			} else if (results.length === 0) {
-				resolve(0);
 			} else {
 				resolve(results);
 			}
@@ -522,8 +518,6 @@ function getCoaches() {
 		connection.query(sqlQuery, (error, results) => {
 			if (error) {
 				reject(error);
-			} else if (results.length === 0) {
-				resolve(0);
 			} else {
 				resolve(results);
 			}
@@ -540,8 +534,6 @@ function getUsers() {
 		connection.query(sqlQuery, (error, results) => {
 			if (error) {
 				reject(error);
-			} else if (results.length === 0) {
-				resolve(0);
 			} else {
 				resolve(results);
 			}
@@ -574,8 +566,6 @@ function getClassroomsStudent(student_id) {
 		connection.query(sqlQuery, (error, results) => {
 			if (error) {
 				reject(error);
-			} else if (results.length === 0) {
-				resolve(0);
 			} else {
 				resolve(results);
 			}
@@ -608,8 +598,6 @@ function getClassroomsCoach(coach_id) {
 		connection.query(sqlQuery, (error, results) => {
 			if (error) {
 				reject(error);
-			} else if (results.length === 0) {
-				resolve(0);
 			} else {
 				resolve(results);
 			}
@@ -619,21 +607,21 @@ function getClassroomsCoach(coach_id) {
 
 
 function addClass(class_details) {
-	const uuid = crypto.createHash('md5').update(new Date().toISOString()).digest('hex');
+	const class_hash = crypto.createHash('md5').update(new Date().toISOString()).digest('hex');
 	const sqlQuery = {
 		sql: `insert into class(
 			classroom_id,
 			start_time,
 			duration,
 			created_at,
-			uuid
+			class_hash
 		  )
 		  values(
 			${class_details.classroom_id},
 			'${class_details.start_time}',
 			${class_details.duration},
 			now(),
-			'${uuid}'
+			'${class_hash}'
 		  );`,
 		timeout: config.db.queryTimeout
 	}
@@ -656,7 +644,7 @@ function getClasses(classroom_id) {
 		start_time,
 		duration,
 		created_at,
-		uuid
+		class_hash
 		from
 		class
 		where
