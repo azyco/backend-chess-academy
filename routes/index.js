@@ -35,5 +35,8 @@ router.get('/classroom_mappings', classroomhandler.handleGetClassroomMapping);
 router.get('/class', classHandler.handleGetClasses);
 router.post('/class', classHandler.handleAddClass);
 router.delete('/class', classHandler.handleDeleteClass);
+router.get('/enter_class', classHandler.handleClassEntry);
+router.get('/start_class', classHandler.handleClassStart);
+router.get('/end_class', classHandler.handleClassEnd);
 
 module.exports = router;

@@ -44,7 +44,7 @@ function createUserInDatabase(profile) {
 								'${profile.user_type}',
 								'${profile.email}',
 								'${profile.password}',
-								now());`,
+								unix_timestamp(now())*1000);`,
 		timeout: config.db.queryTimeout,
 	};
 	const sqlQuery2 = {
@@ -124,7 +124,15 @@ function getPasswordHash(email) {
 
 function getUserAuthentication(email) {
 	const sqlQuery = {
-		sql: `select id,user_type,email,created_at from authentication where email = '${email}';`,
+		sql: `select id,
+		user_type,
+		email,
+		created_at
+		from
+		authentication
+		where
+		email = '${email}'
+		;`,
 		timeout: config.db.queryTimeout,
 	};
 	return new Promise((resolve, reject) => {
@@ -280,7 +288,7 @@ function addClassroom(classroom_data) {
 								'${classroom_data.classroom_name}',
 								'${classroom_data.classroom_description}',
 								${classroom_data.is_active},
-								now());`,
+								unix_timestamp(now())*1000);`,
 		timeout: config.db.queryTimeout,
 	};
 	const sqlQuery2 = {
@@ -618,9 +626,9 @@ function addClass(class_details) {
 		  )
 		  values(
 			${class_details.classroom_id},
-			'${class_details.start_time}',
+			${class_details.start_time},
 			${class_details.duration},
-			now(),
+			unix_timestamp(now())*1000,
 			'${class_hash}'
 		  );`,
 		timeout: config.db.queryTimeout
@@ -744,6 +752,263 @@ function checkClassroomAccessPrivilegeStudent(student_id, classroom_id) {
 	});
 }
 
+function enterClassStudent(student_id, class_hash) {
+	const sqlQuery = {
+		sql: `select
+		class.id as class_id,
+		class.start_time,
+		class.duration,
+		class.created_at class_created_at,
+		class.start_time_actual,
+		class.end_time_actual,
+		classroom.id as classroom_id,
+		classroom.name,
+		classroom.description,
+		classroom.is_active,
+		classroom.created_at as classroom_created_at
+		from
+		class,
+		classroom,
+		mapping_student_classroom,
+		authentication
+		where
+		class.class_hash = '${class_hash}' and
+		authentication.id = ${student_id} and
+		authentication.id = mapping_student_classroom.student_id and
+		classroom.id = class.classroom_id and
+		mapping_student_classroom.classroom_id = class.classroom_id
+		;`,
+		timeout: config.db.queryTimeout
+	}
+	return new Promise((resolve, reject) => {
+		connection.query(sqlQuery, (error, results) => {
+			if (error) {
+				reject(error);
+			}
+			else {
+				resolve(results[0]);
+			}
+		});
+	});
+}
+
+function enterClassCoach(coach_id, class_hash) {
+	const sqlQuery = {
+		sql: `select
+		class.id as class_id,
+		class.start_time,
+		class.duration,
+		class.created_at class_created_at,
+		class.start_time_actual,
+		class.end_time_actual,
+		classroom.id as classroom_id,
+		classroom.name,
+		classroom.description,
+		classroom.is_active,
+		classroom.created_at as classroom_created_at
+		from
+		class,
+		classroom,
+		mapping_coach_classroom,
+		authentication
+		where
+		class.class_hash = '${class_hash}' and
+		authentication.id = ${coach_id} and
+		authentication.id = mapping_coach_classroom.coach_id and
+		classroom.id = class.classroom_id and
+		mapping_coach_classroom.classroom_id = class.classroom_id
+		;`,
+		timeout: config.db.queryTimeout
+	}
+	return new Promise((resolve, reject) => {
+		connection.query(sqlQuery, (error, results) => {
+			if (error) {
+				reject(error);
+			}
+			else {
+				resolve(results[0]);
+			}
+		});
+	});
+}
+
+function enterClassAdmin(class_hash) {
+	const sqlQuery = {
+		sql: `select
+		class.id as class_id,
+		class.start_time,
+		class.duration,
+		class.created_at class_created_at,
+		class.start_time_actual,
+		class.end_time_actual,
+		classroom.id as classroom_id,
+		classroom.name,
+		classroom.description,
+		classroom.is_active,
+		classroom.created_at as classroom_created_at
+		from
+		class,
+		classroom
+		where
+		class.class_hash = '${class_hash}' and
+		classroom.id = class.classroom_id
+		;`,
+		timeout: config.db.queryTimeout
+	}
+	return new Promise((resolve, reject) => {
+		connection.query(sqlQuery, (error, results) => {
+			if (error) {
+				reject(error);
+			}
+			else {
+				resolve(results[0]);
+			}
+		});
+	});
+}
+
+function startClass(class_hash, coach_id) {
+	const sqlQuery1 = {
+		sql: `select
+		class.class_hash
+		from
+		class,
+		classroom,
+		mapping_coach_classroom,
+		authentication
+		where
+		class.class_hash = '${class_hash}' and
+		authentication.id = ${coach_id} and
+		authentication.id = mapping_coach_classroom.coach_id and
+		classroom.id = class.classroom_id and
+		mapping_coach_classroom.classroom_id = class.classroom_id
+		;`,
+		timeout: config.db.queryTimeout
+	}
+
+	const sqlQuery2 = {
+		sql: `update class
+		set
+		start_time_actual = unix_timestamp(now())*1000
+		where
+		class_hash = '${class_hash}';
+		;`,
+		timeout: config.db.queryTimeout
+	}
+
+	return new Promise((resolve, reject) => {
+		connection.beginTransaction({
+			timeout: config.db.queryTimeout,
+		}, (error) => {
+			if (error) {
+				reject(error);
+			}
+			connection.query(sqlQuery1, (selectErr,results) => {
+				if (selectErr) {
+					connection.rollback({
+						timeout: config.db.queryTimeout,
+					}, () => {
+						reject(selectErr);
+					});
+				}
+				if(results.length === 0){
+					reject({error: "invalid_user_id"});
+				}
+				connection.query(sqlQuery2, (updateErr) => {
+					if (updateErr) {
+						connection.rollback({
+							timeout: config.db.queryTimeout,
+						}, () => {
+							reject(updateErr);
+						});
+					}
+					connection.commit((commitErr) => {
+						if (commitErr) {
+							connection.rollback({
+								timeout: config.db.queryTimeout,
+							}, () => {
+								reject(commitErr);
+							});
+						} 
+						resolve();
+					})
+				})
+			})
+		})
+	})
+}
+
+function endClass(class_hash, coach_id) {
+	const sqlQuery1 = {
+		sql: `select
+		class.class_hash
+		from
+		class,
+		classroom,
+		mapping_coach_classroom,
+		authentication
+		where
+		class.class_hash = '${class_hash}' and
+		authentication.id = ${coach_id} and
+		authentication.id = mapping_coach_classroom.coach_id and
+		classroom.id = class.classroom_id and
+		mapping_coach_classroom.classroom_id = class.classroom_id
+		;`,
+		timeout: config.db.queryTimeout
+	}
+
+	const sqlQuery2 = {
+		sql: `update class
+		set
+		end_time_actual = unix_timestamp(now())*1000
+		where
+		class_hash = '${class_hash}';
+		;`,
+		timeout: config.db.queryTimeout
+	}
+
+	return new Promise((resolve, reject) => {
+		connection.beginTransaction({
+			timeout: config.db.queryTimeout,
+		}, (error) => {
+			if (error) {
+				reject(error);
+			}
+			connection.query(sqlQuery1, (selectErr,results) => {
+				if (selectErr) {
+					connection.rollback({
+						timeout: config.db.queryTimeout,
+					}, () => {
+						reject(selectErr);
+					});
+				}
+				if(results.length === 0){
+					reject({error: "invalid_user_id"});
+				}
+				connection.query(sqlQuery2, (updateErr) => {
+					if (updateErr) {
+						connection.rollback({
+							timeout: config.db.queryTimeout,
+						}, () => {
+							reject(updateErr);
+						});
+					}
+					connection.commit((commitErr) => {
+						if (commitErr) {
+							connection.rollback({
+								timeout: config.db.queryTimeout,
+							}, () => {
+								reject(commitErr);
+							});
+						} 
+						resolve();
+					})
+				})
+			})
+		})
+	})
+}
+
 module.exports = {
 	getUserID,
 	createUserInDatabase,
@@ -764,5 +1029,10 @@ module.exports = {
 	addClass,
 	deleteClass,
 	checkClassroomAccessPrivilegeCoach,
-	checkClassroomAccessPrivilegeStudent
+	checkClassroomAccessPrivilegeStudent,
+	enterClassStudent,
+	enterClassCoach,
+	enterClassAdmin,
+	startClass,
+	endClass
 };
