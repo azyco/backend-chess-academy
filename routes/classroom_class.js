@@ -83,7 +83,7 @@ function handleAddClass(req, res) {
         if (user_has_privilege) {
           sqlConnector.addClass(req.body.class_details).then((response) => {
             console.log('class added by coach');
-            res.send(response);
+            res.status(201).send(response);
           }).catch((error) => {
             console.log(error);
             res.status(500).send({
@@ -133,7 +133,7 @@ function handleDeleteClass(req, res) {
         if (user_has_privilege) {
           sqlConnector.deleteClass(req.query.class_id).then((response) => {
             console.log('class deleted by coach');
-            res.status(201).send(response);
+            res.status(200).send(response);
           }).catch((error) => {
             console.log(error);
             res.status(500).send({
@@ -157,7 +157,7 @@ function handleDeleteClass(req, res) {
     } else if (req.session.user_authentication.user_type === 'admin') {
       sqlConnector.deleteClass(req.query.class_id).then((response) => {
         console.log('class deleted by admin');
-        res.status(201).send(response);
+        res.status(200).send(response);
       }).catch((error) => {
         console.log(error);
         res.status(500).send({

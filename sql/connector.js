@@ -891,7 +891,7 @@ function startClass(class_hash, coach_id) {
 		set
 		start_time_actual = unix_timestamp(now())*1000
 		where
-		class_hash = '${class_hash}';
+		class_hash = '${class_hash}'
 		;`,
 		timeout: config.db.queryTimeout
 	}
@@ -962,7 +962,7 @@ function endClass(class_hash, coach_id) {
 		set
 		end_time_actual = unix_timestamp(now())*1000
 		where
-		class_hash = '${class_hash}';
+		class_hash = '${class_hash}'
 		;`,
 		timeout: config.db.queryTimeout
 	}
