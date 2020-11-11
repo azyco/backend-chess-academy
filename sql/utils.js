@@ -5,7 +5,7 @@ function sqlGenerateInsertStudentsToClassRoom(classroomId, selectedStudentArray)
     created_at)
     values`;
   selectedStudentArray.forEach((value) => {
-    sql = sql.concat(`(${value.id},${classroomId},now()),`);
+    sql = sql.concat(`(${value.id},${classroomId},unix_timestamp(utc_timestamp())*1000),`);
   });
   return sql.slice(0, sql.length - 1).concat(';');
 }
@@ -17,7 +17,7 @@ function sqlGenerateInsertCoachesToClassRoom(classroomId, selectedCoachArray) {
         created_at)
         values`;
   selectedCoachArray.forEach((value) => {
-    sql = sql.concat(`(${value.id}, ${classroomId},now()),`);
+    sql = sql.concat(`(${value.id}, ${classroomId},unix_timestamp(utc_timestamp())*1000),`);
   });
   return sql.slice(0, sql.length - 1).concat(';');
 }

@@ -1,29 +1,34 @@
 const sqlConnector = require('../sql/connector');
 
 function handleGetStudent(req, res) {
-  if (req.session.user_authentication && req.session.user_authentication.user_type === 'admin') {
-    sqlConnector.getStudents().then((studentArray) => {
-      console.log('student array sent');
-      res.send({
-        student_array: studentArray,
+  if (req.session.user_authentication) {
+    if (req.session.user_authentication.user_type === 'admin') {
+      sqlConnector.getStudents().then((studentArray) => {
+        console.log('student array sent for admin');
+        res.send({
+          student_array: studentArray,
+        });
+      }).catch((error) => {
+        console.log(error);
+        res.status(500).send({
+          error_type: 'database',
+          error_code: error.code,
+          error_message: error.sqlMessage,
+        });
       });
-    }).catch((error) => {
-      console.log(error);
-      res.status(500).send({
-        error_type: 'database',
-        error_code: error.code,
-        error_message: error.sqlMessage,
-      });
-    });
+    } else {
+      console.log("unauthorized user with invalid user type trying to get students ", req.session.user_authentication);
+      res.sendStatus(403);
+    }
   } else {
+    console.log("unauthorized user with no authentication trying to get students");
     res.sendStatus(403);
   }
+
 }
 
 /**
  * Register a new user (student)
- * also, maybe not check the existence of a user beforehand ?
- * the error code from the database itself will show the error in the inputs
  */
 function handleCreateStudent(req, res) {
   if (req.body.registration_details) {
@@ -49,7 +54,7 @@ function handleCreateStudent(req, res) {
       is_private_dob: 1,
       is_private_parent: 1,
     }).then((response) => {
-      console.log('user created', response);
+      console.log('student created', req.body.registration_details.email);
       res.status(201).send();
       console.log('response sent');
     }).catch((error) => {
@@ -61,7 +66,7 @@ function handleCreateStudent(req, res) {
       });
     });
   } else {
-    console.log('Bad Data');
+    console.log("bad request while trying to add student");
     res.sendStatus(400);
   }
 }

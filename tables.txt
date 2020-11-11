@@ -3,7 +3,7 @@ create table authentication(
   user_type varchar(10) not null,
   email varchar(100) unique not null,
   hashed_password varchar(40) not null,
-  created_at timestamp not null
+  created_at bigint unsigned not null
   )
   
 insert into authentication(
@@ -16,7 +16,7 @@ values(
   'admin',
   'admin@test.com',
   '7c4a8d09ca3762af61e59520943dc26494f8941b',
-  now()
+  unix_timestamp(utc_timestamp())*1000
 );
 
 
@@ -24,7 +24,7 @@ create table mapping_student_classroom(
   student_id int unsigned not null,
   classroom_id int unsigned not null,
   PRIMARY KEY (student_id, classroom_id),
-  created_at timestamp,
+  created_at bigint unsigned not null,
   constraint foreign key(student_id) references authentication(id),
   constraint foreign key(classroom_id) references classroom(id)
   on delete cascade
@@ -36,7 +36,7 @@ create table mapping_coach_classroom(
   coach_id int unsigned not null,
   classroom_id int unsigned not null,
   PRIMARY KEY (coach_id, classroom_id),
-  created_at timestamp,
+  created_at bigint unsigned not null,
   constraint foreign key(coach_id) references authentication(id),
   constraint foreign key(classroom_id) references classroom(id)
   on delete cascade
@@ -48,12 +48,10 @@ create table classroom(
 	name varchar(80) not null unique,
 	description varchar(200),
 	is_active boolean not null,
-	created_at timestamp,
+	created_at bigint unsigned not null,
   	primary key(id)
   );
 
-
-  use chess_academy_1;
 create table profile(
   auth_id int unsigned not null,
   fullname varchar(100) not null,
@@ -82,14 +80,17 @@ create table profile(
 create table class(
   id int unsigned auto_increment,
   classroom_id int unsigned not null,
-  start_time timestamp not null,
+  start_time bigint unsigned not null,
+  start_time_actual bigint unsigned,
+  end_time_actual bigint unsigned,
   duration int,
-  created_at timestamp not null,
+  created_at bigint unsigned not null,
+  class_hash varchar(32) not null unique,
   primary key(id),
   constraint foreign key(classroom_id) references classroom(id)
   on delete cascade
   on update cascade
-);
+  );
 
 select
 classroom.id,
