@@ -17,7 +17,7 @@ function handleGetClasses(req, res) {
             });
           });
         } else {
-          console.log("unauthorized student trying to access class")
+          console.log('unauthorized student trying to access class');
           res.sendStatus(403);
         }
       }).catch((error) => {
@@ -43,7 +43,7 @@ function handleGetClasses(req, res) {
             });
           });
         } else {
-          console.log("unauthorized coach trying to access class ", req.session.user_authentication)
+          console.log('unauthorized coach trying to access class ', req.session.user_authentication);
           res.sendStatus(403);
         }
       }).catch((error) => {
@@ -67,11 +67,11 @@ function handleGetClasses(req, res) {
         });
       });
     } else {
-      console.log("unauthorized user with invalid user type trying to access class ", req.session.user_authentication);
+      console.log('unauthorized user with invalid user type trying to access class ', req.session.user_authentication);
       res.sendStatus(403);
     }
   } else {
-    console.log("unauthorized user with no authentication trying to access class");
+    console.log('unauthorized user with no authentication trying to access class');
     res.sendStatus(403);
   }
 }
@@ -93,7 +93,7 @@ function handleAddClass(req, res) {
             });
           });
         } else {
-          console.log("unauthorized coach trying to add class ", req.session.user_authentication)
+          console.log('unauthorized coach trying to add class ', req.session.user_authentication);
           res.sendStatus(403);
         }
       }).catch((error) => {
@@ -117,11 +117,11 @@ function handleAddClass(req, res) {
         });
       });
     } else {
-      console.log("unauthorized user with invalid user type trying to add class ", req.session.user_authentication);
+      console.log('unauthorized user with invalid user type trying to add class ', req.session.user_authentication);
       res.sendStatus(403);
     }
   } else {
-    console.log("unauthorized user with no authentication trying to add class");
+    console.log('unauthorized user with no authentication trying to add class');
     res.sendStatus(403);
   }
 }
@@ -143,7 +143,7 @@ function handleDeleteClass(req, res) {
             });
           });
         } else {
-          console.log("unauthorized coach trying to delete classroom ", req.session.user_authentication)
+          console.log('unauthorized coach trying to delete classroom ', req.session.user_authentication);
           res.sendStatus(403);
         }
       }).catch((error) => {
@@ -167,11 +167,11 @@ function handleDeleteClass(req, res) {
         });
       });
     } else {
-      console.log("unauthorized user with invalid user type trying to delete class ", req.session.user_authentication);
+      console.log('unauthorized user with invalid user type trying to delete class ', req.session.user_authentication);
       res.sendStatus(403);
     }
   } else {
-    console.log("unauthorized user with no authentication trying to delete class");
+    console.log('unauthorized user with no authentication trying to delete class');
     res.sendStatus(403);
   }
 }
@@ -183,9 +183,8 @@ function handleClassEntry(req, res) {
         if (this_class) {
           console.log('class accessed by student');
           res.status(200).send(this_class);
-        }
-        else {
-          console.log('invalid class access by student ' + req.session.user_authentication.id);
+        } else {
+          console.log(`invalid class access by student ${req.session.user_authentication.id}`);
           res.sendStatus(403);
         }
       }).catch((error) => {
@@ -196,15 +195,13 @@ function handleClassEntry(req, res) {
           error_message: error.sqlMessage,
         });
       });
-    }
-    else if (req.session.user_authentication.user_type === 'coach') {
+    } else if (req.session.user_authentication.user_type === 'coach') {
       sqlConnector.enterClassCoach(req.session.user_authentication.id, req.query.class_hash).then((this_class) => {
         if (this_class) {
           console.log('class accessed by coach');
           res.status(200).send(this_class);
-        }
-        else {
-          console.log('invalid class access by coach ' + req.session.user_authentication.id);
+        } else {
+          console.log(`invalid class access by coach ${req.session.user_authentication.id}`);
           res.sendStatus(403);
         }
       }).catch((error) => {
@@ -215,8 +212,7 @@ function handleClassEntry(req, res) {
           error_message: error.sqlMessage,
         });
       });
-    }
-    else if (req.session.user_authentication.user_type === 'admin') {
+    } else if (req.session.user_authentication.user_type === 'admin') {
       sqlConnector.enterClassAdmin(req.query.class_hash).then((this_class) => {
         console.log('class accessed by admin');
         res.status(200).send(this_class);
@@ -228,14 +224,12 @@ function handleClassEntry(req, res) {
           error_message: error.sqlMessage,
         });
       });
-    }
-    else {
-      console.log("unauthorized user with invalid user type trying to delete class ", req.session.user_authentication);
+    } else {
+      console.log('unauthorized user with invalid user type trying to delete class ', req.session.user_authentication);
       res.sendStatus(403);
     }
-  }
-  else {
-    console.log("unauthorized user with no authentication trying access class with hash", req.query.class_hash);
+  } else {
+    console.log('unauthorized user with no authentication trying access class with hash', req.query.class_hash);
     res.sendStatus(403);
   }
 }
@@ -249,7 +243,7 @@ function handleClassStart(req, res) {
       }).catch((error) => {
         console.log(error);
         if (error.error && error.error === 'invalid_user_id') {
-          console.log("unauthorized coach trying to start class ", req.session.user_authentication);
+          console.log('unauthorized coach trying to start class ', req.session.user_authentication);
           res.status(403).send({
             error_type: 'invalid_user_id',
           });
@@ -260,14 +254,12 @@ function handleClassStart(req, res) {
           error_message: error.sqlMessage,
         });
       });
-    }
-    else {
-      console.log("unauthorized user with invalid user type trying to start class ", req.session.user_authentication);
+    } else {
+      console.log('unauthorized user with invalid user type trying to start class ', req.session.user_authentication);
       res.sendStatus(403);
     }
-  }
-  else {
-    console.log("unauthorized user with no authentication trying start class with hash", req.query.class_hash);
+  } else {
+    console.log('unauthorized user with no authentication trying start class with hash', req.query.class_hash);
     res.sendStatus(403);
   }
 }
@@ -281,7 +273,7 @@ function handleClassEnd(req, res) {
       }).catch((error) => {
         console.log(error);
         if (error.error && error.error === 'invalid_user_id') {
-          console.log("unauthorized coach trying to end class ", req.session.user_authentication);
+          console.log('unauthorized coach trying to end class ', req.session.user_authentication);
           res.status(403).send({
             error_type: 'invalid_user_id',
           });
@@ -292,14 +284,12 @@ function handleClassEnd(req, res) {
           error_message: error.sqlMessage,
         });
       });
-    }
-    else {
-      console.log("unauthorized user with invalid user type trying to end class ", req.session.user_authentication);
+    } else {
+      console.log('unauthorized user with invalid user type trying to end class ', req.session.user_authentication);
       res.sendStatus(403);
     }
-  }
-  else {
-    console.log("unauthorized user with no authentication trying end class with hash", req.query.class_hash);
+  } else {
+    console.log('unauthorized user with no authentication trying end class with hash', req.query.class_hash);
     res.sendStatus(403);
   }
 }
@@ -310,5 +300,5 @@ module.exports = {
   handleDeleteClass,
   handleClassEntry,
   handleClassStart,
-  handleClassEnd
-}
+  handleClassEnd,
+};

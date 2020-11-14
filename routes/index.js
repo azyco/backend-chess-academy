@@ -8,6 +8,7 @@ const coachhandler = require('./coach');
 const studenthandler = require('./student');
 const loginHandler = require('./login');
 const classHandler = require('./classroom_class');
+const gameHandler = require('./game_handler');
 
 router.get('/', (req, res) => {
   res.send('pong');
@@ -38,5 +39,7 @@ router.delete('/class', classHandler.handleDeleteClass);
 router.get('/enter_class', classHandler.handleClassEntry);
 router.get('/start_class', classHandler.handleClassStart);
 router.get('/end_class', classHandler.handleClassEnd);
+
+router.get('/game', gameHandler.handleWebSocket);
 
 module.exports = router;

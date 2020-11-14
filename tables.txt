@@ -1,56 +1,13 @@
+use chess_academy_1;
+
 create table authentication(
   id int unsigned primary key auto_increment,
   user_type varchar(10) not null,
   email varchar(100) unique not null,
   hashed_password varchar(40) not null,
   created_at bigint unsigned not null
-  )
-  
-insert into authentication(
-  user_type,
-  email,
-  hashed_password,
-  created_at
-)
-values(
-  'admin',
-  'admin@test.com',
-  '7c4a8d09ca3762af61e59520943dc26494f8941b',
-  unix_timestamp(utc_timestamp())*1000
 );
 
-
-create table mapping_student_classroom(
-  student_id int unsigned not null,
-  classroom_id int unsigned not null,
-  PRIMARY KEY (student_id, classroom_id),
-  created_at bigint unsigned not null,
-  constraint foreign key(student_id) references authentication(id),
-  constraint foreign key(classroom_id) references classroom(id)
-  on delete cascade
-  on update cascade
-);
-
-
-create table mapping_coach_classroom(
-  coach_id int unsigned not null,
-  classroom_id int unsigned not null,
-  PRIMARY KEY (coach_id, classroom_id),
-  created_at bigint unsigned not null,
-  constraint foreign key(coach_id) references authentication(id),
-  constraint foreign key(classroom_id) references classroom(id)
-  on delete cascade
-  on update cascade
-);
-
-create table classroom(
-	id int unsigned auto_increment,
-	name varchar(80) not null unique,
-	description varchar(200),
-	is_active boolean not null,
-	created_at bigint unsigned not null,
-  	primary key(id)
-  );
 
 create table profile(
   auth_id int unsigned not null,
@@ -75,7 +32,41 @@ create table profile(
   constraint foreign key(auth_id) references authentication(id)
   on delete cascade
   on update cascade
-)
+);
+
+
+create table classroom(
+	id int unsigned auto_increment,
+	name varchar(80) not null unique,
+	description varchar(200),
+	is_active boolean not null,
+	created_at bigint unsigned not null,
+  	primary key(id)
+);
+
+create table mapping_student_classroom(
+  student_id int unsigned not null,
+  classroom_id int unsigned not null,
+  PRIMARY KEY (student_id, classroom_id),
+  created_at bigint unsigned not null,
+  constraint foreign key(student_id) references authentication(id),
+  constraint foreign key(classroom_id) references classroom(id)
+  on delete cascade
+  on update cascade
+);
+
+
+create table mapping_coach_classroom(
+  coach_id int unsigned not null,
+  classroom_id int unsigned not null,
+  PRIMARY KEY (coach_id, classroom_id),
+  created_at bigint unsigned not null,
+  constraint foreign key(coach_id) references authentication(id),
+  constraint foreign key(classroom_id) references classroom(id)
+  on delete cascade
+  on update cascade
+);
+
 
 create table class(
   id int unsigned auto_increment,
@@ -91,6 +82,21 @@ create table class(
   on delete cascade
   on update cascade
   );
+
+  
+insert into authentication(
+  user_type,
+  email,
+  hashed_password,
+  created_at
+)
+values(
+  'admin',
+  'admin@test.com',
+  '7c4a8d09ca3762af61e59520943dc26494f8941b',
+  unix_timestamp(utc_timestamp())*1000
+);
+
 
 select
 classroom.id,
