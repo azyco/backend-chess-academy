@@ -1,15 +1,20 @@
+const socketio = require('socket.io');
+const app = require('./app');
+
 const config = require('./config');
 
-const { app, server } = require('./app');
+// server.listen(config.servicePort, config.serviceIP, () => {
+//   // eslint-disable-next-line no-console
+//   console.log(`Express is running on port ${server.address().port}`);
+// });
 
-// app.set('port', config.servicePort);
-
-server.listen(config.servicePort, config.serviceIP, () => {
+const server = app.listen(config.servicePort, config.serviceIP, () => {
   // eslint-disable-next-line no-console
   console.log(`Express is running on port ${server.address().port}`);
 });
 
-// const server = app.listen(config.servicePort, config.serviceIP, () => {
-//   // eslint-disable-next-line no-console
-//   console.log(`Express is running on port ${server.address().port}`);
-// });
+const io = socketio(server, { cors: true, origins: '*:*' });
+io.on('connection', (socket) => {
+  console.log('connect');
+  socket.send('test messgae');
+});
