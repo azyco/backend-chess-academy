@@ -83,6 +83,18 @@ create table class(
   on update cascade
   );
 
+create table question(
+  id int unsigned auto_increment,
+  class_id int unsigned not null,
+  description varchar(100) not null unique,
+  fen_question varchar(100) not null,
+  deadline bigint unsigned not null,
+  created_at bigint unsigned not null,
+  primary key(id),
+  constraint foreign key(class_id) references class(id)
+  on delete cascade
+  on update cascade
+  )
   
 insert into authentication(
   user_type,

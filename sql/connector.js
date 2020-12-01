@@ -637,7 +637,7 @@ function addClass(class_details) {
   });
 }
 
-function getClasses(classroom_id) {
+function getClass(classroom_id) {
   const sqlQuery = {
     sql: `select 
 		id,
@@ -989,6 +989,161 @@ function endClass(class_hash, coach_id) {
   });
 }
 
+function checkClassAccessPrivilegeStudent(student_id, class_id) {
+  const sqlQuery = {
+    sql: `select
+		class.id as class_id,
+		class.start_time,
+		class.duration,
+		class.created_at class_created_at,
+		class.start_time_actual,
+		class.end_time_actual,
+		classroom.id as classroom_id,
+		classroom.name,
+		classroom.description,
+		classroom.is_active,
+		classroom.created_at as classroom_created_at
+		from
+		class,
+		classroom,
+		mapping_student_classroom,
+		authentication
+		where
+		class.id = '${class_id}' and
+		authentication.id = ${student_id} and
+		authentication.id = mapping_student_classroom.student_id and
+		classroom.id = class.classroom_id and
+		mapping_student_classroom.classroom_id = class.classroom_id
+		;`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error, results) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results[0]);
+      }
+    });
+  });
+}
+
+function checkClassAccessPrivilegeCoach(coach_id, class_id) {
+  const sqlQuery = {
+    sql: `select
+		class.id as class_id,
+		class.start_time,
+		class.duration,
+		class.created_at class_created_at,
+		class.start_time_actual,
+		class.end_time_actual,
+		classroom.id as classroom_id,
+		classroom.name,
+		classroom.description,
+		classroom.is_active,
+		classroom.created_at as classroom_created_at
+		from
+		class,
+		classroom,
+		mapping_coach_classroom,
+		authentication
+		where
+		class.id = '${class_id}' and
+		authentication.id = ${coach_id} and
+		authentication.id = mapping_coach_classroom.coach_id and
+		classroom.id = class.classroom_id and
+		mapping_coach_classroom.classroom_id = class.classroom_id
+		;`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error, results) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results[0]);
+      }
+    });
+  });
+}
+
+function getQuesion(class_id) {
+  const sqlQuery = {
+    sql: `select 
+		id,
+    class_id,
+    description,
+    fen_question,
+    deadline,
+    created_at
+		from
+		question
+		where
+		class_id = ${class_id}
+		;`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error, results) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}
+
+function addQuestion(question_details) {
+  const sqlQuery = {
+    sql: `insert into question(
+			class_id,
+      description,
+      fen_question,
+      deadline,
+      created_at
+		  )
+		  values(
+			${question_details.class_id},
+			'${question_details.description}',
+      '${question_details.fen_question}',
+      ${question_details.deadline},
+			unix_timestamp(now())*1000
+		  );`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+function deleteQuestion(question_id) {
+  const sqlQuery = {
+    sql: `delete
+    from
+    question
+		where
+    id = ${question_id}
+    ;`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
 module.exports = {
   getUserID,
   createUserInDatabase,
@@ -1005,7 +1160,7 @@ module.exports = {
   editClassroom,
   getClassroomsStudent,
   getClassroomsCoach,
-  getClasses,
+  getClass,
   addClass,
   deleteClass,
   checkClassroomAccessPrivilegeCoach,
@@ -1015,4 +1170,9 @@ module.exports = {
   enterClassAdmin,
   startClass,
   endClass,
+  checkClassAccessPrivilegeCoach,
+  checkClassAccessPrivilegeStudent,
+  addQuestion,
+  getQuesion,
+  deleteQuestion,
 };

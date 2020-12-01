@@ -5,7 +5,7 @@ function handleGetClasses(req, res) {
     if (req.session.user_authentication.user_type === 'student') {
       sqlConnector.checkClassroomAccessPrivilegeStudent(req.session.user_authentication.id, req.query.classroom_id).then((user_has_privilege) => {
         if (user_has_privilege) {
-          sqlConnector.getClasses(req.query.classroom_id).then((class_array) => {
+          sqlConnector.getClass(req.query.classroom_id).then((class_array) => {
             console.log('class array sent for student');
             res.status(200).send(class_array);
           }).catch((error) => {
@@ -31,7 +31,7 @@ function handleGetClasses(req, res) {
     } else if (req.session.user_authentication.user_type === 'coach') {
       sqlConnector.checkClassroomAccessPrivilegeCoach(req.session.user_authentication.id, req.query.classroom_id).then((user_has_privilege) => {
         if (user_has_privilege) {
-          sqlConnector.getClasses(req.query.classroom_id).then((class_array) => {
+          sqlConnector.getClass(req.query.classroom_id).then((class_array) => {
             console.log('class array sent for coach');
             res.status(200).send(class_array);
           }).catch((error) => {
@@ -55,7 +55,7 @@ function handleGetClasses(req, res) {
         });
       });
     } else if (req.session.user_authentication.user_type === 'admin') {
-      sqlConnector.getClasses(req.query.classroom_id).then((class_array) => {
+      sqlConnector.getClass(req.query.classroom_id).then((class_array) => {
         console.log('class array sent for admin');
         res.status(200).send(class_array);
       }).catch((error) => {

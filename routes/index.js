@@ -8,6 +8,7 @@ const coachhandler = require('./coach');
 const studenthandler = require('./student');
 const loginHandler = require('./login');
 const classHandler = require('./classroom_class');
+const questionHandler = require('./question');
 
 router.get('/', (req, res) => {
   res.send('pong');
@@ -38,5 +39,9 @@ router.delete('/class', classHandler.handleDeleteClass);
 router.get('/enter_class', classHandler.handleClassEntry);
 router.get('/start_class', classHandler.handleClassStart);
 router.get('/end_class', classHandler.handleClassEnd);
+
+router.get('/question', questionHandler.handleGetQuestion);
+router.post('/question', questionHandler.handleAddQuestion);
+router.delete('/question', questionHandler.handleDeleteQuestion);
 
 module.exports = router;
