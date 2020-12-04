@@ -35,7 +35,7 @@ from
       classroom.id
   ) AS coaches_result ON students_result.cid = coaches_result.cid;`,
 
-  'GET.STUDENTS': `select authentication.id,authentication.email,authentication.user_type,profile.fullname 
+  'GET.STUDENTS_ADMIN': `select authentication.id,authentication.email,authentication.user_type,profile.fullname 
     from authentication, profile
     where
         (authentication.id = profile.auth_id)
