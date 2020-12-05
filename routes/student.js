@@ -3,8 +3,26 @@ const sqlConnector = require('../sql/connector');
 function handleGetStudent(req, res) {
   if (req.session.user_authentication) {
     if (req.session.user_authentication.user_type === 'admin') {
-      sqlConnector.getStudents().then((studentArray) => {
+      sqlConnector.getStudentsAdmin().then((studentArray) => {
         console.log('student array sent for admin');
+        res.send({
+          student_array: studentArray,
+        });
+      }).catch((error) => {
+        console.log(error);
+        res.status(500).send({
+          error_type: 'database',
+          error_code: error.code,
+          error_message: error.sqlMessage,
+        });
+      });
+    } else if (req.session.user_authentication.user_type === 'coach') {
+      const filters = {
+        coach_id: req.session.user_authentication.id,
+        classroom_id: req.query.classroom_id,
+      }
+      sqlConnector.getStudentsCoach(filters).then((studentArray) => {
+        console.log('student array sent for coach');
         res.send({
           student_array: studentArray,
         });

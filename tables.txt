@@ -83,6 +83,35 @@ create table class(
   on update cascade
   );
 
+create table question(
+  id int unsigned auto_increment,
+  class_id int unsigned not null,
+  description varchar(100) not null,
+  fen_question varchar(100) not null,
+  deadline bigint unsigned not null,
+  created_at bigint unsigned not null,
+  primary key(id),
+  constraint foreign key(class_id) references class(id)
+  on delete cascade
+  on update cascade
+  )
+
+  create table solution(
+  question_id int unsigned not null,
+  student_id int unsigned not null,
+  pgn varchar(1000) not null,
+  is_evaluated boolean default false,
+  score int,
+  comments varchar(1000),
+  updated_at bigint unsigned not null,
+  primary key(question_id,student_id),
+  constraint foreign key(question_id) references question(id)
+  on delete cascade
+  on update cascade,
+  constraint foreign key(student_id) references authentication(id)
+  on delete cascade
+  on update cascade
+  );
   
 insert into authentication(
   user_type,
@@ -156,3 +185,80 @@ INNER JOIN
 	group by
         classroom.id) AS coaches_result
  ON students_result.cid = coaches_result.cid
+
+
+
+ select
+    concat(solution.student_id, solution.question_id) as solution_id,
+    question.id as question_id,
+    question.class_id,
+    question.description,
+    question.fen_question,
+    question.deadline as question_deadline,
+    question.created_at question_created_at,
+    solution.student_id,
+    solution.pgn,
+    solution.score,
+    solution.comments,
+    solution.is_evaluated,
+    solution.updated_at as solution_updated_at
+  from
+    question
+    left outer join solution on solution.question_id = question.id
+  where
+    question.id = solution.question_id
+    ${(filters.student_id)? `solution.student_id in (${filters.student_id}) and\n`:``}
+    ${(filters.question_id)? `question.id in (${filters.question_id}) and\n`:``}
+    and question.id in (
+      select
+        id as question_id
+      from
+        question
+      where
+      ${(filters.class_id)? `class_id in (${filters.class_id}) and\n`:``}
+        class_id in (
+          select
+            id as class_id
+          from
+            class
+          where
+            ${(filters.classroom_id)? `classroom_id in (${filters.classroom_id}) and\n`:``}
+            classroom_id in (
+              select
+                classroom_id
+              from
+                mapping_coach_classroom
+              where
+                coach_id = ${filters.coach_id}
+            )
+        )
+    )
+
+
+
+  select
+    concat(solution.student_id,solution.question_id) as solution_id,
+    question.id as question_id,
+    question.class_id,
+    question.description,
+    question.fen_question,
+    question.deadline as question_deadline,
+    question.created_at question_created_at,
+    solution.student_id,
+    solution.pgn,
+    solution.score,
+    solution.comments,
+    solution.is_evaluated,
+    solution.updated_at as solution_updated_at
+  from
+    question
+    left outer join (
+      select
+        *
+      from
+        solution
+      where
+        student_id = ${filters.student_id}
+    ) as solution on solution.question_id = question.id
+  where
+    question.class_id = ${filters.class_id}

@@ -495,9 +495,46 @@ function editClassroom(classroom_data) {
 }
 
 // admin
-function getStudents() {
+function getStudentsAdmin() {
   const sqlQuery = {
-    sql: QUERY.SQL['GET.STUDENTS'],
+    sql: QUERY.SQL['GET.STUDENTS_ADMIN'],
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error, results) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}
+
+function getStudentsCoach(filters) {
+  const sqlQuery = {
+    sql: `select
+    authentication.id as student_id,
+    profile.fullname
+  from
+    mapping_student_classroom,
+    authentication,
+    profile
+  where
+    authentication.id = mapping_student_classroom.student_id and
+    mapping_student_classroom.student_id = profile.auth_id and
+    ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and` : ``}
+    mapping_student_classroom.classroom_id in (
+      select
+        classroom_id
+      from
+        mapping_coach_classroom
+      where
+        coach_id = ${filters.coach_id}
+    )
+  group by
+    mapping_student_classroom.student_id
+    ;`,
     timeout: config.db.queryTimeout,
   };
   return new Promise((resolve, reject) => {
@@ -637,7 +674,7 @@ function addClass(class_details) {
   });
 }
 
-function getClasses(classroom_id) {
+function getClass(classroom_id) {
   const sqlQuery = {
     sql: `select 
 		id,
@@ -989,6 +1026,403 @@ function endClass(class_hash, coach_id) {
   });
 }
 
+function checkClassAccessPrivilegeStudent(student_id, class_id) {
+  const sqlQuery = {
+    sql: `select
+		class.id as class_id,
+		class.start_time,
+		class.duration,
+		class.created_at class_created_at,
+		class.start_time_actual,
+		class.end_time_actual,
+		classroom.id as classroom_id,
+		classroom.name,
+		classroom.description,
+		classroom.is_active,
+		classroom.created_at as classroom_created_at
+		from
+		class,
+		classroom,
+		mapping_student_classroom,
+		authentication
+		where
+		class.id = '${class_id}' and
+		authentication.id = ${student_id} and
+		authentication.id = mapping_student_classroom.student_id and
+		classroom.id = class.classroom_id and
+		mapping_student_classroom.classroom_id = class.classroom_id
+		;`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error, results) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results[0]);
+      }
+    });
+  });
+}
+
+function checkClassAccessPrivilegeCoach(coach_id, class_id) {
+  const sqlQuery = {
+    sql: `select
+		class.id as class_id,
+		class.start_time,
+		class.duration,
+		class.created_at class_created_at,
+		class.start_time_actual,
+		class.end_time_actual,
+		classroom.id as classroom_id,
+		classroom.name,
+		classroom.description,
+		classroom.is_active,
+		classroom.created_at as classroom_created_at
+		from
+		class,
+		classroom,
+		mapping_coach_classroom,
+		authentication
+		where
+		class.id = '${class_id}' and
+		authentication.id = ${coach_id} and
+		authentication.id = mapping_coach_classroom.coach_id and
+		classroom.id = class.classroom_id and
+		mapping_coach_classroom.classroom_id = class.classroom_id
+		;`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error, results) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results[0]);
+      }
+    });
+  });
+}
+
+function getQuestionStudent(class_id) {
+  const sqlQuery = {
+    sql: `select 
+		id,
+    class_id,
+    description,
+    fen_question,
+    deadline,
+    created_at
+		from
+		question
+		where
+		class_id = ${class_id}
+		;`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error, results) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}
+
+function getQuestionCoach(filters) {
+  const sqlQuery = {
+    sql: `select
+    id,
+    class_id,
+    description,
+    fen_question,
+    deadline,
+    created_at
+  from
+    question
+  where
+    ${(filters.class_id) ? `class_id = ${filters.class_id} and\n` : ``}
+    class_id in (
+      select
+        id as class_id
+      from
+        class
+      where
+        ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and\n` : ``}
+        classroom_id in (
+          select
+            classroom_id
+          from
+            mapping_coach_classroom
+          where
+            coach_id = ${filters.coach_id}
+        )
+    );`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error, results) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}
+
+function addQuestion(question_details) {
+  const sqlQuery = {
+    sql: `insert into question(
+			class_id,
+      description,
+      fen_question,
+      deadline,
+      created_at
+		  )
+		  values(
+			${question_details.class_id},
+			'${question_details.description}',
+      '${question_details.fen_question}',
+      ${question_details.deadline},
+			unix_timestamp(now())*1000
+		  );`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+function deleteQuestion(question_id) {
+  const sqlQuery = {
+    sql: `delete
+    from
+    question
+		where
+    id = ${question_id}
+    ;`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+function getSolutionCoach(filters) {
+  const sqlQuery = {
+    sql: `select
+    concat(solution.student_id, solution.question_id) as solution_id,
+    question.id as question_id,
+    question.class_id,
+    question.description,
+    question.fen_question,
+    question.deadline as question_deadline,
+    question.created_at question_created_at,
+    solution.student_id,
+    solution.pgn,
+    solution.score,
+    solution.comments,
+    solution.is_evaluated,
+    solution.updated_at as solution_updated_at
+  from
+    question
+    left outer join solution on solution.question_id = question.id
+  where
+    ${(filters.student_id) ? `solution.student_id in (${filters.student_id}) and\n` : ``}
+    ${(filters.question_id) ? `question.id in (${filters.question_id}) and\n` : ``}
+    question.id = solution.question_id
+    and question.id in (
+      select
+        id as question_id
+      from
+        question
+      where
+      ${(filters.class_id) ? `class_id in (${filters.class_id}) and\n` : ``}
+        class_id in (
+          select
+            id as class_id
+          from
+            class
+          where
+            ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and\n` : ``}
+            classroom_id in (
+              select
+                classroom_id
+              from
+                mapping_coach_classroom
+              where
+                coach_id = ${filters.coach_id}
+            )
+        )
+    )`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error, results) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}
+
+function getSolutionStudent(filters) {
+  const class_filter = (filters.class_id) ?
+    `question.class_id = ${filters.class_id}`
+    :
+    `question.class_id in (
+    select
+      id as class_id
+    from
+      class
+    where
+      ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and\n` : ``}
+      classroom_id in (
+        select
+          classroom_id
+        from
+          mapping_coach_classroom
+        where
+        student_id = ${filters.student_id}
+      )
+  )`;
+  const sqlQuery = {
+    sql: `select
+    concat(solution.student_id,solution.question_id) as solution_id,
+    question.id as question_id,
+    question.class_id,
+    question.description,
+    question.fen_question,
+    question.deadline as question_deadline,
+    question.created_at question_created_at,
+    solution.student_id,
+    solution.pgn,
+    solution.score,
+    solution.comments,
+    solution.is_evaluated,
+    solution.updated_at as solution_updated_at
+  from
+    question
+    left outer join (
+      select
+        *
+      from
+        solution
+      where
+        student_id = ${filters.student_id}
+    ) as solution on solution.question_id = question.id
+  where
+  ${class_filter}
+  ;`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error, results) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}
+
+function addSolution(solution_details) {
+  const sqlQuery = {
+    sql: `insert into solution(
+      question_id,
+      student_id,
+      pgn,
+      updated_at
+      )
+      values(
+      ${solution_details.question_id},
+      '${solution_details.student_id}',
+      '${solution_details.pgn}',
+      unix_timestamp(now())*1000
+      )
+        on duplicate key
+        update
+        pgn = '${solution_details.pgn}',
+        updated_at = unix_timestamp(now())*1000
+      ;`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+function updateSolution(solution_update_details) {
+  const sqlQuery = {
+    sql: `update
+    solution
+    set
+    score = ${solution_update_details.score},
+    comments = '${solution_update_details.comments}',
+    is_evaluated = ${1}
+    where
+    question_id = ${solution_update_details.question_id} and
+    student_id = ${solution_update_details.student_id}
+    ;`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+function deleteSolution(question_id, student_id) {
+  const sqlQuery = {
+    sql: `delete
+    from
+    solution
+    where
+    question_id = ${question_id} and
+    student_id = ${student_id}
+    ;`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
 module.exports = {
   getUserID,
   createUserInDatabase,
@@ -999,13 +1433,14 @@ module.exports = {
   getClassrooms,
   getClassroomMappings,
   addClassroom,
-  getStudents,
+  getStudentsAdmin,
+  getStudentsCoach,
   getCoaches,
   getUsers,
   editClassroom,
   getClassroomsStudent,
   getClassroomsCoach,
-  getClasses,
+  getClass,
   addClass,
   deleteClass,
   checkClassroomAccessPrivilegeCoach,
@@ -1015,4 +1450,15 @@ module.exports = {
   enterClassAdmin,
   startClass,
   endClass,
+  checkClassAccessPrivilegeCoach,
+  checkClassAccessPrivilegeStudent,
+  addQuestion,
+  getQuestionCoach,
+  getQuestionStudent,
+  deleteQuestion,
+  addSolution,
+  getSolutionCoach,
+  getSolutionStudent,
+  deleteSolution,
+  updateSolution,
 };
