@@ -1104,33 +1104,6 @@ function checkClassAccessPrivilegeCoach(coach_id, class_id) {
   });
 }
 
-function getQuestionStudent(class_id) {
-  const sqlQuery = {
-    sql: `select 
-		id,
-    class_id,
-    description,
-    fen_question,
-    deadline,
-    created_at
-		from
-		question
-		where
-		class_id = ${class_id}
-		;`,
-    timeout: config.db.queryTimeout,
-  };
-  return new Promise((resolve, reject) => {
-    connection.query(sqlQuery, (error, results) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(results);
-      }
-    });
-  });
-}
-
 function getQuestionCoach(filters) {
   const sqlQuery = {
     sql: `select
@@ -1283,26 +1256,7 @@ function getSolutionCoach(filters) {
   });
 }
 
-function getSolutionStudent(filters) {
-  const class_filter = (filters.class_id) ?
-    `question.class_id = ${filters.class_id}`
-    :
-    `question.class_id in (
-    select
-      id as class_id
-    from
-      class
-    where
-      ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and\n` : ``}
-      classroom_id in (
-        select
-          classroom_id
-        from
-          mapping_coach_classroom
-        where
-        student_id = ${filters.student_id}
-      )
-  )`;
+function getQuestionSolutionStudent(filters) {
   const sqlQuery = {
     sql: `select
     concat(solution.student_id,solution.question_id) as solution_id,
@@ -1329,7 +1283,23 @@ function getSolutionStudent(filters) {
         student_id = ${filters.student_id}
     ) as solution on solution.question_id = question.id
   where
-  ${class_filter}
+  ${(filters.class_id) ? `class_id in (${filters.class_id}) and\n` : ``}
+    class_id in (
+    select
+      id as class_id
+    from
+      class
+    where
+      ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and\n` : ``}
+      classroom_id in (
+        select
+          classroom_id
+        from
+          mapping_student_classroom
+        where
+        student_id = ${filters.student_id}
+      )
+  )
   ;`,
     timeout: config.db.queryTimeout,
   };
@@ -1454,11 +1424,10 @@ module.exports = {
   checkClassAccessPrivilegeStudent,
   addQuestion,
   getQuestionCoach,
-  getQuestionStudent,
   deleteQuestion,
   addSolution,
   getSolutionCoach,
-  getSolutionStudent,
+  getQuestionSolutionStudent,
   deleteSolution,
   updateSolution,
 };
