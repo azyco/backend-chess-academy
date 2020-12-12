@@ -2,33 +2,7 @@ const sqlConnector = require('../sql/connector');
 
 function handleGetQuestion(req, res) {
   if (req.session.user_authentication) {
-    if (req.session.user_authentication.user_type === 'student') {
-      sqlConnector.checkClassAccessPrivilegeStudent(req.session.user_authentication.id, req.query.class_id).then((user_has_privilege) => {
-        if (user_has_privilege) {
-          sqlConnector.getQuestionSudent(req.query.class_id).then((question_array) => {
-            console.log('question array sent for student');
-            res.status(200).send(question_array);
-          }).catch((error) => {
-            console.log(error);
-            res.status(500).send({
-              error_type: 'database',
-              error_code: error.code,
-              error_message: error.sqlMessage,
-            });
-          });
-        } else {
-          console.log('unauthorized student trying to access questions');
-          res.sendStatus(403);
-        }
-      }).catch((error) => {
-        console.log(error);
-        res.status(500).send({
-          error_type: 'database',
-          error_code: error.code,
-          error_message: error.sqlMessage,
-        });
-      });
-    } else if (req.session.user_authentication.user_type === 'coach') {
+    if (req.session.user_authentication.user_type === 'coach') {
       const filters = {
         coach_id: req.session.user_authentication.id,
         classroom_id: req.query.classroom_id,

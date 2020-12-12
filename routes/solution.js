@@ -8,7 +8,7 @@ function handleGetSolution(req, res) {
         class_id: req.query.class_id,
         classroom_id: req.query.classroom_id,
       }
-      sqlConnector.getSolutionStudent(filters).then((solution_array) => {
+      sqlConnector.getQuestionSolutionStudent(filters).then((solution_array) => {
         console.log('solution array sent for student');
         res.status(200).send(solution_array);
       }).catch((error) => {

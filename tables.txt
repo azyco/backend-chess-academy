@@ -189,7 +189,7 @@ INNER JOIN
 
 
  select
-    concat(solution.student_id, solution.question_id) as solution_id,
+    concat(solution.student_id,solution.question_id) as solution_id,
     question.id as question_id,
     question.class_id,
     question.description,
@@ -204,35 +204,33 @@ INNER JOIN
     solution.updated_at as solution_updated_at
   from
     question
-    left outer join solution on solution.question_id = question.id
-  where
-    question.id = solution.question_id
-    ${(filters.student_id)? `solution.student_id in (${filters.student_id}) and\n`:``}
-    ${(filters.question_id)? `question.id in (${filters.question_id}) and\n`:``}
-    and question.id in (
+    left outer join (
       select
-        id as question_id
+        *
       from
-        question
+        solution
       where
-      ${(filters.class_id)? `class_id in (${filters.class_id}) and\n`:``}
-        class_id in (
-          select
-            id as class_id
-          from
-            class
-          where
-            ${(filters.classroom_id)? `classroom_id in (${filters.classroom_id}) and\n`:``}
-            classroom_id in (
-              select
-                classroom_id
-              from
-                mapping_coach_classroom
-              where
-                coach_id = ${filters.coach_id}
-            )
-        )
-    )
+        student_id = ${filters.student_id}
+    ) as solution on solution.question_id = question.id
+  where
+  ${(filters.class_id) ? `class_id in (${filters.class_id}) and\n` : ``}
+    class_id in (
+    select
+      id as class_id
+    from
+      class
+    where
+      ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and\n` : ``}
+      classroom_id in (
+        select
+          classroom_id
+        from
+          mapping_student_classroom
+        where
+        student_id = ${filters.student_id}
+      )
+  )
+  ;
 
 
 
