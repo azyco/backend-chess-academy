@@ -13,7 +13,10 @@ create table profile(
   auth_id int unsigned not null,
   fullname varchar(100) not null,
   country varchar(3) not null,
-  state varchar(20) not null,
+  state varchar(50) not null,
+  city varchar(50) not null,
+  address varchar(1000) not null,
+  pincode numeric(6) not null,
   description varchar(200),
   user_image blob,
   fide_id varchar(10),
@@ -34,6 +37,20 @@ create table profile(
   on update cascade
 );
 
+create table coach_extras(
+  coach_id int unsigned not null,
+  fide_title varchar(100),
+  peak_rating varchar(10),
+  current_rating varchar(10),
+  perf_highlights varchar(1000),
+  exp_trainer varchar(1000),
+  successful_students varchar(1000),
+  fees varchar(50) not null,
+  bank_details varchar(1000) not null,
+  constraint foreign key(coach_id) references authentication(id)
+  on delete cascade
+  on update cascade
+);
 
 create table classroom(
 	id int unsigned auto_increment,
