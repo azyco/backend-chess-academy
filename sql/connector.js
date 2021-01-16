@@ -38,11 +38,11 @@ function getUserID(email) {
 function createUserInDatabase(profile) {
   const sqlQuery1 = {
     sql: `insert into authentication(user_type, email,hashed_password,created_at) 
-	values(
-'${profile.user_type}',
-'${profile.email}',
-'${profile.password}',
-unix_timestamp(now())*1000);`,
+      values(
+        '${profile.user_type}',
+        '${profile.email}',
+        '${profile.password}',
+        unix_timestamp(now())*1000);`,
     timeout: config.db.queryTimeout,
   };
   const sqlQuery2 = {
@@ -83,17 +83,41 @@ unix_timestamp(now())*1000);`,
                   reject(insertProfileErr);
                 });
               }
-              connection.commit((insertErr) => {
-                if (insertErr) {
-                  connection.rollback({
-                    timeout: config.db.queryTimeout,
-                  }, () => {
-                    reject(insertErr);
+              if (profile.user_type === 'coach') {
+                const sqlQuery4 = utils.sqlGenerateInsertToCoachExtras(config, profile);
+                connection.query(sqlQuery4, (insertCoachExtrasErr) => {
+                  if (insertProfileErr) {
+                    connection.rollback({
+                      timeout: config.db.queryTimeout,
+                    }, () => {
+                      reject(insertCoachExtrasErr);
+                    });
+                  }
+                  connection.commit((insertErr) => {
+                    if (insertErr) {
+                      connection.rollback({
+                        timeout: config.db.queryTimeout,
+                      }, () => {
+                        reject(insertErr);
+                      });
+                    } else {
+                      resolve();
+                    }
                   });
-                } else {
-                  resolve();
-                }
-              });
+                });
+              } else {
+                connection.commit((insertErr) => {
+                  if (insertErr) {
+                    connection.rollback({
+                      timeout: config.db.queryTimeout,
+                    }, () => {
+                      reject(insertErr);
+                    });
+                  } else {
+                    resolve();
+                  }
+                });
+              }
             });
           }
         });
@@ -169,6 +193,9 @@ function getUserProfile(id) {
             fullname: results[0].fullname,
             country: results[0].country,
             state: results[0].state,
+            city: results[0].city,
+            address: results[0].address,
+            pincode: results[0].pincode,
             description: results[0].description,
             user_image: results[0].user_image,
             fide_id: results[0].fide_id,
@@ -195,7 +222,10 @@ function updateUserProfile(userID, updated_user_profile) {
     sql: `update profile
 				set 
 				fullname = '${updated_user_profile.fullname}',
-				state = '${updated_user_profile.state}',
+        state = '${updated_user_profile.state}',
+        city = '${updated_user_profile.city}',
+        address = '${updated_user_profile.address}',
+        pincode = '${updated_user_profile.pincode}',
 				description = '${updated_user_profile.description}',
 				fide_id = '${updated_user_profile.fide_id}',
 				lichess_id = '${updated_user_profile.lichess_id}',
@@ -219,6 +249,64 @@ function updateUserProfile(userID, updated_user_profile) {
     });
   });
 }
+
+function getCoachExtras(id) {
+  const sqlQuery = utils.sqlGenerateGetCoachExtras(config, id);
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error, results) => {
+      if (error) {
+        reject(error);
+      }
+      if (results.length === 0) {
+        resolve(0);
+      } else {
+        resolve({
+          coach_extras: {
+            coach_id: results[0].coach_id,
+            fide_title: results[0].fide_title,
+            peak_rating: results[0].peak_rating,
+            current_rating: results[0].current_rating,
+            perf_highlights: results[0].perf_highlights,
+            exp_trainer: results[0].exp_trainer,
+            successful_students: results[0].successful_students,
+            fees: results[0].fees,
+            bank_details: results[0].bank_details,
+          },
+        });
+      }
+    });
+  });
+}
+
+function updateCoachExtras(userID, updated_coach_extras) {
+  const sqlQuery = {
+    sql:
+      `update
+        coach_extras
+        set 
+        fide_title = '${updated_coach_extras.fide_title}',
+        peak_rating = '${updated_coach_extras.peak_rating}',
+        current_rating = '${updated_coach_extras.current_rating}',
+        perf_highlights = '${updated_coach_extras.perf_highlights}',
+        exp_trainer = '${updated_coach_extras.exp_trainer}',
+        successful_students = '${updated_coach_extras.successful_students}',
+        fees = '${updated_coach_extras.fees}',
+        bank_details = '${updated_coach_extras.bank_details}'
+        where
+        coach_id = ${userID};`,
+    timeout: config.db.queryTimeout,
+  };
+  return new Promise((resolve, reject) => {
+    connection.query(sqlQuery, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
 // admin
 function getClassrooms() {
   const sqlQuery = {
@@ -263,7 +351,7 @@ function getClassroomMappings(classroom_id) {
   };
 
   return new Promise((resolve, reject) => {
-    connection.query(sqlQuery1, (error, results, fields) => {
+    connection.query(sqlQuery1, (error, results) => {
       if (error) {
         reject(error);
       } else {
@@ -430,12 +518,12 @@ function editClassroom(classroom_data) {
         }
 
         if (classroom_data.coach_array_selected_is_dirty) {
-          connection.query(sql_delete_coach_mapping, (insertErr) => {
-            if (insertErr) {
+          connection.query(sql_delete_coach_mapping, (deleteErr) => {
+            if (deleteErr) {
               connection.rollback({
                 timeout: config.db.queryTimeout,
               }, () => {
-                reject(insertErr);
+                reject(deleteErr);
               });
             }
             updates = updates.concat('deleted coach mapping,');
@@ -463,12 +551,12 @@ function editClassroom(classroom_data) {
             });
           }
           updates = updates.concat('deleted student mapping,');
-          connection.query(sql_add_student_mapping, (insertErr) => {
-            if (insertErr) {
+          connection.query(sql_add_student_mapping, (deleteErr) => {
+            if (deleteErr) {
               connection.rollback({
                 timeout: config.db.queryTimeout,
               }, () => {
-                reject(insertErr);
+                reject(deleteErr);
               });
             }
             updates = updates.concat('updated student mapping,');
@@ -523,7 +611,7 @@ function getStudentsCoach(filters) {
   where
     authentication.id = mapping_student_classroom.student_id and
     mapping_student_classroom.student_id = profile.auth_id and
-    ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and` : ``}
+    ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and` : ''}
     mapping_student_classroom.classroom_id in (
       select
         classroom_id
@@ -1116,14 +1204,14 @@ function getQuestionCoach(filters) {
   from
     question
   where
-    ${(filters.class_id) ? `class_id = ${filters.class_id} and\n` : ``}
+    ${(filters.class_id) ? `class_id = ${filters.class_id} and\n` : ''}
     class_id in (
       select
         id as class_id
       from
         class
       where
-        ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and\n` : ``}
+        ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and\n` : ''}
         classroom_id in (
           select
             classroom_id
@@ -1216,8 +1304,8 @@ function getSolutionCoach(filters) {
     question
     left outer join solution on solution.question_id = question.id
   where
-    ${(filters.student_id) ? `solution.student_id in (${filters.student_id}) and\n` : ``}
-    ${(filters.question_id) ? `question.id in (${filters.question_id}) and\n` : ``}
+    ${(filters.student_id) ? `solution.student_id in (${filters.student_id}) and\n` : ''}
+    ${(filters.question_id) ? `question.id in (${filters.question_id}) and\n` : ''}
     question.id = solution.question_id
     and question.id in (
       select
@@ -1225,14 +1313,14 @@ function getSolutionCoach(filters) {
       from
         question
       where
-      ${(filters.class_id) ? `class_id in (${filters.class_id}) and\n` : ``}
+      ${(filters.class_id) ? `class_id in (${filters.class_id}) and\n` : ''}
         class_id in (
           select
             id as class_id
           from
             class
           where
-            ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and\n` : ``}
+            ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and\n` : ''}
             classroom_id in (
               select
                 classroom_id
@@ -1283,14 +1371,14 @@ function getQuestionSolutionStudent(filters) {
         student_id = ${filters.student_id}
     ) as solution on solution.question_id = question.id
   where
-  ${(filters.class_id) ? `class_id in (${filters.class_id}) and\n` : ``}
+  ${(filters.class_id) ? `class_id in (${filters.class_id}) and\n` : ''}
     class_id in (
     select
       id as class_id
     from
       class
     where
-      ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and\n` : ``}
+      ${(filters.classroom_id) ? `classroom_id in (${filters.classroom_id}) and\n` : ''}
       classroom_id in (
         select
           classroom_id
@@ -1430,4 +1518,6 @@ module.exports = {
   getQuestionSolutionStudent,
   deleteSolution,
   updateSolution,
+  updateCoachExtras,
+  getCoachExtras,
 };
